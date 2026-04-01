@@ -3,12 +3,22 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import roomsReducer from './roomsSlice';
 import servicesReducer from './servicesSlice';
 import staffReducer from './staffSlice';
+import notificationsReducer from './notificationsSlice';
+import inventoryReducer from './inventorySlice';
+import billingReducer from './billingSlice';
+import crmReducer from './crmSlice';
+import hotelsReducer from './hotelsSlice';
 
 export const store = configureStore({
   reducer: {
     rooms: roomsReducer,
     services: servicesReducer,
     staff: staffReducer,
+    notifications: notificationsReducer,
+    inventory: inventoryReducer,
+    billing: billingReducer,
+    crm: crmReducer,
+    hotels: hotelsReducer,
   },
 });
 
