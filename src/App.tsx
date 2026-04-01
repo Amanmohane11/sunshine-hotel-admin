@@ -9,7 +9,12 @@ import RoomsPage from "./pages/RoomsPage";
 import ServicesPage from "./pages/ServicesPage";
 import StaffPage from "./pages/StaffPage";
 import HRPage from "./pages/HRPage";
-import NotFound from "./pages/NotFound.tsx";
+import NotificationsPage from "./pages/NotificationsPage";
+import InventoryPage from "./pages/InventoryPage";
+import BookingHistoryPage from "./pages/BookingHistoryPage";
+import GuestCRMPage from "./pages/GuestCRMPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +31,11 @@ const App = () => (
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/staff" element={<StaffPage />} />
             <Route path="/hr" element={<HRPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/inventory" element={<InventoryPage />} />
+            <Route path="/booking-history" element={<BookingHistoryPage />} />
+            <Route path="/guest-crm" element={<GuestCRMPage />} />
+            <Route path="/super-admin" element={<SuperAdminPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AdminLayout>
