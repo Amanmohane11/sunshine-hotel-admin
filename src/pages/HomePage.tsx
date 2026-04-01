@@ -1,5 +1,5 @@
 import { useAppSelector } from '@/store';
-import { BedDouble, CheckCircle, XCircle, Sparkles } from 'lucide-react';
+import { BedDouble, CheckCircle, XCircle, Sparkles, CalendarClock } from 'lucide-react';
 import { format } from 'date-fns';
 
 const HomePage = () => {
@@ -8,6 +8,7 @@ const HomePage = () => {
   const available = rooms.filter(r => r.status === 'available').length;
   const occupied = rooms.filter(r => r.status === 'occupied').length;
   const cleaning = rooms.filter(r => r.status === 'cleaning').length;
+  const reserved = rooms.filter(r => r.status === 'reserved').length;
 
   const recentBookings = rooms
     .filter(r => r.currentBooking)
@@ -20,12 +21,13 @@ const HomePage = () => {
     { label: 'Available', value: available, icon: CheckCircle, color: 'bg-status-available', textColor: 'text-status-available' },
     { label: 'Occupied', value: occupied, icon: XCircle, color: 'bg-status-occupied', textColor: 'text-status-occupied' },
     { label: 'Cleaning', value: cleaning, icon: Sparkles, color: 'bg-status-cleaning', textColor: 'text-status-cleaning' },
+    { label: 'Reserved', value: reserved, icon: CalendarClock, color: 'bg-status-blue', textColor: 'text-status-blue' },
   ];
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Welcome back, Admin 👋</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {stats.map(({ label, value, icon: Icon, color, textColor }) => (
           <div key={label} className="bg-card rounded-xl p-5 shadow-sm border border-border hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-3">
