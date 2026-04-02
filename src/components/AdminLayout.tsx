@@ -7,7 +7,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       <AdminHeader />
       <div className="flex">
         <AdminSidebar />
-        <main className="flex-1 p-6 overflow-auto animate-fade-in">
+        <main className="flex-1 p-6 overflow-auto animate-slide-up">
           {children}
         </main>
       </div>

@@ -14,6 +14,9 @@ import InventoryPage from "./pages/InventoryPage";
 import BookingHistoryPage from "./pages/BookingHistoryPage";
 import GuestCRMPage from "./pages/GuestCRMPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
+import BillingPage from "./pages/BillingPage";
+import ReportsPage from "./pages/ReportsPage";
+import HelpPage from "./pages/HelpPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,9 +36,15 @@ const App = () => (
             <Route path="/hr" element={<HRPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
+            <Route path="/inventory/create-bill" element={<InventoryPage />} />
+            <Route path="/inventory/history" element={<InventoryPage />} />
             <Route path="/booking-history" element={<BookingHistoryPage />} />
+            <Route path="/customers" element={<GuestCRMPage />} />
+            <Route path="/billing" element={<BillingPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
             <Route path="/guest-crm" element={<GuestCRMPage />} />
             <Route path="/super-admin" element={<SuperAdminPage />} />
+            <Route path="/help" element={<HelpPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AdminLayout>
