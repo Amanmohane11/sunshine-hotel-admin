@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store';
-import { markAttendance, selectStaff, clearSelectedStaff, assignTask, updateTaskStatus } from '@/store/staffSlice';
-import { StaffMember, Shift } from '@/store/dummyData';
+import { markAttendance, selectStaff, clearSelectedStaff, assignTask, updateTaskStatus, addStaffMember } from '@/store/staffSlice';
+import { StaffMember, Shift, WorkType } from '@/store/dummyData';
 import { toast } from 'sonner';
-import { ArrowLeft, CheckCircle, Plus, ClipboardList, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Plus, ClipboardList, X, Search, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const shiftColors: Record<string, string> = {
@@ -18,6 +18,8 @@ const shiftLabels: Record<Shift, string> = {
   night: '🌙 Night Shift',
 };
 
+const emptyForm = { name: '', phone: '', email: '', age: '', gender: 'Male' as const, shift: 'morning' as Shift, role: '', workType: 'full-time' as WorkType };
+
 const StaffPage = () => {
   const dispatch = useAppDispatch();
   const members = useAppSelector(s => s.staff.members);
@@ -26,6 +28,40 @@ const StaffPage = () => {
   const [showAssign, setShowAssign] = useState<string | null>(null);
   const [assignRoom, setAssignRoom] = useState('');
   const [assignType, setAssignType] = useState<'cleaning' | 'maintenance' | 'service'>('cleaning');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [search, setSearch] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const e: Record<string, string> = {};
+    if (!form.name.trim()) e.name = 'Name is required';
+    if (!form.phone.trim() || !/^\d{10}$/.test(form.phone)) e.phone = 'Valid 10-digit phone required';
+    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) e.email = 'Valid email required';
+    if (!form.age || parseInt(form.age) < 18 || parseInt(form.age) > 70) e.age = 'Age must be 18-70';
+    if (!form.role.trim()) e.role = 'Role is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleAddStaff = () => {
+    if (!validateForm()) return;
+    const staffImages = [
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face',
+    ];
+    dispatch(addStaffMember({
+      id: `st-${Date.now()}`, name: form.name, role: form.role, isManager: false,
+      phone: form.phone, email: form.email, age: parseInt(form.age), gender: form.gender,
+      shift: form.shift, workType: form.workType,
+      image: staffImages[Math.floor(Math.random() * staffImages.length)],
+      salary: 25000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: false, tasks: [],
+    }));
+    toast.success(`${form.name} added to staff`);
+    setForm(emptyForm);
+    setShowAddModal(false);
+    setErrors({});
+  };
 
   const handleAssignTask = (staffId: string) => {
     const room = rooms.find(r => r.id === assignRoom);
@@ -39,6 +75,9 @@ const StaffPage = () => {
   if (selected) return <StaffProfile member={selected} onBack={() => dispatch(clearSelectedStaff())} dispatch={dispatch} />;
 
   const shifts: Shift[] = ['morning', 'afternoon', 'night'];
+  const filteredMembers = members.filter(m =>
+    !search || m.name.toLowerCase().includes(search.toLowerCase()) || m.role.toLowerCase().includes(search.toLowerCase())
+  );
 
   const StaffCard = ({ member, idx }: { member: StaffMember; idx: number }) => {
     const todayMarked = member.attendance.some(a => a.date === new Date().toISOString().split('T')[0]);
@@ -58,14 +97,17 @@ const StaffPage = () => {
           )}
         </div>
         <div className="flex items-center justify-between gap-2">
-          <span className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize ${shiftColors[member.shift]}`}>{member.shift}</span>
+          <div className="flex items-center gap-2">
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize ${shiftColors[member.shift]}`}>{member.shift}</span>
+            <span className="px-2 py-1 rounded-lg text-xs font-medium bg-muted/60 text-muted-foreground capitalize">{member.workType}</span>
+          </div>
           <div className="flex items-center gap-2">
             {todayMarked ? (
               <span className="flex items-center gap-1 text-xs text-status-available font-medium"><CheckCircle className="w-3.5 h-3.5" />Present</span>
             ) : (
               <button onClick={(e) => { e.stopPropagation(); dispatch(markAttendance({ id: member.id, status: 'present' })); toast.success(`${member.name} marked present`); }}
                 className="px-3 py-1.5 rounded-xl gradient-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all btn-ripple shadow-sm shadow-primary/20">
-                Mark Attendance
+                Mark Present
               </button>
             )}
             <button onClick={(e) => { e.stopPropagation(); setShowAssign(showAssign === member.id ? null : member.id); }} className="p-1.5 rounded-lg border border-border/50 hover:bg-muted transition-all">
@@ -108,12 +150,24 @@ const StaffPage = () => {
 
   return (
     <div className="animate-slide-up">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-1">Staff</h1>
-        <p className="text-muted-foreground text-sm">Manage shifts, attendance, and task assignments</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Staff</h1>
+          <p className="text-muted-foreground text-sm">Manage shifts, attendance, and task assignments</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-muted/60 rounded-xl px-3 py-2.5 border border-border/50 focus-within:border-primary/40 transition-all">
+            <Search className="w-4 h-4 text-muted-foreground mr-2" />
+            <input type="text" placeholder="Search staff..." className="bg-transparent outline-none text-sm w-40" value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all btn-ripple shadow-md shadow-primary/20">
+            <UserPlus className="w-4 h-4" /> Add Staff
+          </button>
+        </div>
       </div>
+
       {shifts.map(shift => {
-        const shiftMembers = members.filter(m => m.shift === shift);
+        const shiftMembers = filteredMembers.filter(m => m.shift === shift);
         if (shiftMembers.length === 0) return null;
         return (
           <div key={shift} className="mb-8">
@@ -124,6 +178,78 @@ const StaffPage = () => {
           </div>
         );
       })}
+
+      {/* Add Staff Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-scale-in" onClick={() => setShowAddModal(false)}>
+          <div className="glass-card rounded-2xl border border-border/50 p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold">Add New Staff Member</h2>
+              <button onClick={() => { setShowAddModal(false); setErrors({}); }} className="p-1.5 rounded-lg hover:bg-muted transition-all"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1.5">Name *</label>
+                <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all" />
+                {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5">Phone *</label>
+                  <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="10 digit phone" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all" />
+                  {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5">Email *</label>
+                  <input value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="email@example.com" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all" />
+                  {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5">Age *</label>
+                  <input type="number" value={form.age} onChange={e => setForm({...form, age: e.target.value})} placeholder="Age" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all" />
+                  {errors.age && <p className="text-xs text-destructive mt-1">{errors.age}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5">Gender *</label>
+                  <select value={form.gender} onChange={e => setForm({...form, gender: e.target.value as any})} className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5">Role *</label>
+                <input value={form.role} onChange={e => setForm({...form, role: e.target.value})} placeholder="e.g. Receptionist, Chef, Security" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all" />
+                {errors.role && <p className="text-xs text-destructive mt-1">{errors.role}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5">Shift *</label>
+                  <select value={form.shift} onChange={e => setForm({...form, shift: e.target.value as Shift})} className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all">
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                    <option value="night">Night</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5">Work Type *</label>
+                  <select value={form.workType} onChange={e => setForm({...form, workType: e.target.value as WorkType})} className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all">
+                    <option value="full-time">Full-time</option>
+                    <option value="part-time">Part-time</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => { setShowAddModal(false); setErrors({}); }} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all">Cancel</button>
+              <button onClick={handleAddStaff} className="flex-1 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all btn-ripple shadow-md shadow-primary/20">Add Staff</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -142,14 +268,19 @@ const StaffProfile = ({ member, onBack, dispatch }: { member: StaffMember; onBac
           <div>
             <h2 className="text-xl font-bold">{member.name}</h2>
             <p className="text-muted-foreground text-sm">{member.role}</p>
-            <span className={`inline-block mt-1.5 px-2.5 py-1 rounded-lg text-xs font-medium capitalize ${shiftColors[member.shift]}`}>{member.shift} shift</span>
+            <div className="flex gap-2 mt-1.5">
+              <span className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize ${shiftColors[member.shift]}`}>{member.shift} shift</span>
+              <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-muted/60 text-muted-foreground capitalize">{member.workType}</span>
+            </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4 text-sm mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm mb-6">
           <div className="bg-muted/40 rounded-xl p-3"><span className="text-xs text-muted-foreground uppercase tracking-wider">Phone</span><p className="font-semibold mt-0.5">{member.phone}</p></div>
-          <div className="bg-muted/40 rounded-xl p-3"><span className="text-xs text-muted-foreground uppercase tracking-wider">Email</span><p className="font-semibold mt-0.5">{member.email}</p></div>
+          <div className="bg-muted/40 rounded-xl p-3"><span className="text-xs text-muted-foreground uppercase tracking-wider">Email</span><p className="font-semibold mt-0.5 truncate">{member.email}</p></div>
+          <div className="bg-muted/40 rounded-xl p-3"><span className="text-xs text-muted-foreground uppercase tracking-wider">Age / Gender</span><p className="font-semibold mt-0.5">{member.age} / {member.gender}</p></div>
           <div className="bg-muted/40 rounded-xl p-3"><span className="text-xs text-muted-foreground uppercase tracking-wider">Leaves</span><p className="font-semibold mt-0.5">{member.leaves}</p></div>
           <div className="bg-muted/40 rounded-xl p-3"><span className="text-xs text-muted-foreground uppercase tracking-wider">Half Days</span><p className="font-semibold mt-0.5">{member.halfDays}</p></div>
+          <div className="bg-muted/40 rounded-xl p-3"><span className="text-xs text-muted-foreground uppercase tracking-wider">Salary</span><p className="font-semibold mt-0.5">₹{member.salary.toLocaleString()}</p></div>
         </div>
 
         {member.tasks.length > 0 && (
