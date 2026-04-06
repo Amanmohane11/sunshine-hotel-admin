@@ -69,6 +69,7 @@ export interface ServiceOrder {
 }
 
 export type Shift = 'morning' | 'afternoon' | 'night';
+export type WorkType = 'full-time' | 'part-time';
 
 export interface TaskAssignment {
   id: string;
@@ -86,7 +87,10 @@ export interface StaffMember {
   isManager: boolean;
   phone: string;
   email: string;
+  age: number;
+  gender: 'Male' | 'Female' | 'Other';
   shift: Shift;
+  workType: WorkType;
   image: string;
   salary: number;
   attendance: { date: string; status: 'present' | 'half_day' | 'absent' }[];
@@ -113,17 +117,21 @@ export interface InventoryItem {
   quantity: number;
   unit: string;
   costPrice: number;
+  mrp: number;
+  margin: number;
   supplier: string;
   lastUpdated: string;
   minStock: number;
+  expiryDate?: string;
 }
 
 export interface InventoryBill {
   id: string;
+  billNumber: string;
   supplierName: string;
   supplierPhone: string;
   supplierAddress: string;
-  products: { productId: string; productName: string; quantity: number; unitPrice: number; total: number }[];
+  products: { productId: string; productName: string; quantity: number; unitPrice: number; mrp: number; margin: number; expiryDate: string; total: number }[];
   subtotal: number;
   gst: number;
   total: number;
@@ -174,9 +182,12 @@ export interface Hotel {
   name: string;
   location: string;
   owner: string;
+  email: string;
   status: 'active' | 'inactive' | 'pending';
   rooms: number;
   subscription: 'monthly' | 'yearly';
+  subscriptionStart: string;
+  subscriptionEnd: string;
   revenue: number;
   createdAt: string;
 }
@@ -188,6 +199,26 @@ export interface SubscriptionPlan {
   billing: 'monthly' | 'yearly';
   features: string[];
   maxRooms: number;
+}
+
+export interface HotelQuery {
+  id: string;
+  hotelId: string;
+  hotelName: string;
+  subject: string;
+  message: string;
+  status: 'open' | 'resolved';
+  createdAt: string;
+  response?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  module: 'inventory' | 'billing' | 'staff' | 'rooms' | 'system';
+  details: string;
+  user: string;
+  timestamp: string;
 }
 
 // ---------- Dummy Data ----------
@@ -216,53 +247,29 @@ export const dummyRooms: Room[] = Array.from({ length: 24 }, (_, i) => {
   };
   if (status === 'occupied') {
     room.currentBooking = {
-      id: `bk-${i}`,
-      roomId: room.id,
-      guests: [
-        { id: `g-${i}-1`, name: `Guest ${i + 1}`, phone: '9876543210', address: '123 Street', email: `guest${i}@email.com`, age: 30, gender: 'Male' },
-      ],
+      id: `bk-${i}`, roomId: room.id,
+      guests: [{ id: `g-${i}-1`, name: `Guest ${i + 1}`, phone: '9876543210', address: '123 Street', email: `guest${i}@email.com`, age: 30, gender: 'Male' }],
       checkIn: new Date(Date.now() - 3600000 * 2).toISOString(),
       checkOut: new Date(Date.now() + 3600000 * 22).toISOString(),
-      status: 'active',
-      createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
-      services: [
-        { id: `bs-${i}-1`, name: 'Room Service', price: 500, quantity: 1, type: 'room_service' },
-      ],
-      roomCharges: 3500,
-      serviceCharges: 500,
-      tax: 720,
-      totalAmount: 4720,
-      amountPaid: 3500,
-      paymentMethod: 'upi',
-      paymentStatus: 'partial',
+      status: 'active', createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+      services: [{ id: `bs-${i}-1`, name: 'Room Service', price: 500, quantity: 1, type: 'room_service' }],
+      roomCharges: 3500, serviceCharges: 500, tax: 720, totalAmount: 4720, amountPaid: 3500, paymentMethod: 'upi', paymentStatus: 'partial',
     };
   }
   if (status === 'reserved') {
     room.currentBooking = {
-      id: `bk-res-${i}`,
-      roomId: room.id,
-      guests: [
-        { id: `g-res-${i}`, name: `Future Guest ${i + 1}`, phone: '9876543299', address: '456 Avenue', email: `future${i}@email.com`, age: 28, gender: 'Female' },
-      ],
+      id: `bk-res-${i}`, roomId: room.id,
+      guests: [{ id: `g-res-${i}`, name: `Future Guest ${i + 1}`, phone: '9876543299', address: '456 Avenue', email: `future${i}@email.com`, age: 28, gender: 'Female' }],
       checkIn: new Date(Date.now() + 3600000 * 24).toISOString(),
       checkOut: new Date(Date.now() + 3600000 * 48).toISOString(),
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      services: [],
-      roomCharges: 4000,
-      serviceCharges: 0,
-      tax: 720,
-      totalAmount: 4720,
-      amountPaid: 0,
-      paymentStatus: 'pending',
+      status: 'active', createdAt: new Date().toISOString(), services: [],
+      roomCharges: 4000, serviceCharges: 0, tax: 720, totalAmount: 4720, amountPaid: 0, paymentStatus: 'pending',
     };
   }
   return room;
 });
 
-export const dummyBookings: Booking[] = dummyRooms
-  .filter(r => r.currentBooking)
-  .map(r => r.currentBooking!);
+export const dummyBookings: Booking[] = dummyRooms.filter(r => r.currentBooking).map(r => r.currentBooking!);
 
 export const dummyServices: ServiceOrder[] = [
   { id: 's1', roomId: 'room-2', roomNumber: '102', type: 'food', description: 'Dinner for 2', amount: 1200, status: 'completed', createdAt: new Date().toISOString() },
@@ -284,14 +291,14 @@ const staffImages = [
 ];
 
 export const dummyStaff: StaffMember[] = [
-  { id: 'st1', name: 'Rajesh Kumar', role: 'General Manager', isManager: true, phone: '9876543210', email: 'rajesh@hotel.com', shift: 'morning', image: staffImages[0], salary: 80000, attendance: [], leaves: 1, halfDays: 0, salaryPaid: false, tasks: [] },
-  { id: 'st2', name: 'Priya Sharma', role: 'Front Desk Manager', isManager: true, phone: '9876543211', email: 'priya@hotel.com', shift: 'morning', image: staffImages[1], salary: 55000, attendance: [], leaves: 0, halfDays: 1, salaryPaid: false, tasks: [] },
-  { id: 'st3', name: 'Amit Patel', role: 'Housekeeping Manager', isManager: true, phone: '9876543212', email: 'amit@hotel.com', shift: 'afternoon', image: staffImages[2], salary: 50000, attendance: [], leaves: 2, halfDays: 0, salaryPaid: true, tasks: [] },
-  { id: 'st4', name: 'Sneha Reddy', role: 'Receptionist', isManager: false, phone: '9876543213', email: 'sneha@hotel.com', shift: 'morning', image: staffImages[3], salary: 25000, attendance: [], leaves: 3, halfDays: 2, salaryPaid: false, tasks: [{ id: 'task-1', roomId: 'room-3', roomNumber: '103', type: 'cleaning', status: 'assigned', assignedAt: new Date().toISOString() }] },
-  { id: 'st5', name: 'Vikram Singh', role: 'Housekeeping Staff', isManager: false, phone: '9876543214', email: 'vikram@hotel.com', shift: 'afternoon', image: staffImages[4], salary: 20000, attendance: [], leaves: 1, halfDays: 1, salaryPaid: false, tasks: [{ id: 'task-2', roomId: 'room-9', roomNumber: '303', type: 'cleaning', status: 'in_progress', assignedAt: new Date().toISOString() }] },
-  { id: 'st6', name: 'Meera Nair', role: 'Room Service', isManager: false, phone: '9876543215', email: 'meera@hotel.com', shift: 'night', image: staffImages[5], salary: 22000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: true, tasks: [] },
-  { id: 'st7', name: 'Arjun Das', role: 'Security', isManager: false, phone: '9876543216', email: 'arjun@hotel.com', shift: 'night', image: staffImages[0], salary: 18000, attendance: [], leaves: 2, halfDays: 1, salaryPaid: false, tasks: [] },
-  { id: 'st8', name: 'Kavitha Iyer', role: 'Chef', isManager: false, phone: '9876543217', email: 'kavitha@hotel.com', shift: 'morning', image: staffImages[1], salary: 35000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: false, tasks: [] },
+  { id: 'st1', name: 'Rajesh Kumar', role: 'General Manager', isManager: true, phone: '9876543210', email: 'rajesh@hotel.com', age: 42, gender: 'Male', shift: 'morning', workType: 'full-time', image: staffImages[0], salary: 80000, attendance: [], leaves: 1, halfDays: 0, salaryPaid: false, tasks: [] },
+  { id: 'st2', name: 'Priya Sharma', role: 'Front Desk Manager', isManager: true, phone: '9876543211', email: 'priya@hotel.com', age: 35, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[1], salary: 55000, attendance: [], leaves: 0, halfDays: 1, salaryPaid: false, tasks: [] },
+  { id: 'st3', name: 'Amit Patel', role: 'Housekeeping Manager', isManager: true, phone: '9876543212', email: 'amit@hotel.com', age: 38, gender: 'Male', shift: 'afternoon', workType: 'full-time', image: staffImages[2], salary: 50000, attendance: [], leaves: 2, halfDays: 0, salaryPaid: true, tasks: [] },
+  { id: 'st4', name: 'Sneha Reddy', role: 'Receptionist', isManager: false, phone: '9876543213', email: 'sneha@hotel.com', age: 26, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[3], salary: 25000, attendance: [], leaves: 3, halfDays: 2, salaryPaid: false, tasks: [{ id: 'task-1', roomId: 'room-3', roomNumber: '103', type: 'cleaning', status: 'assigned', assignedAt: new Date().toISOString() }] },
+  { id: 'st5', name: 'Vikram Singh', role: 'Housekeeping Staff', isManager: false, phone: '9876543214', email: 'vikram@hotel.com', age: 30, gender: 'Male', shift: 'afternoon', workType: 'full-time', image: staffImages[4], salary: 20000, attendance: [], leaves: 1, halfDays: 1, salaryPaid: false, tasks: [{ id: 'task-2', roomId: 'room-9', roomNumber: '303', type: 'cleaning', status: 'in_progress', assignedAt: new Date().toISOString() }] },
+  { id: 'st6', name: 'Meera Nair', role: 'Room Service', isManager: false, phone: '9876543215', email: 'meera@hotel.com', age: 28, gender: 'Female', shift: 'night', workType: 'part-time', image: staffImages[5], salary: 22000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: true, tasks: [] },
+  { id: 'st7', name: 'Arjun Das', role: 'Security', isManager: false, phone: '9876543216', email: 'arjun@hotel.com', age: 33, gender: 'Male', shift: 'night', workType: 'full-time', image: staffImages[0], salary: 18000, attendance: [], leaves: 2, halfDays: 1, salaryPaid: false, tasks: [] },
+  { id: 'st8', name: 'Kavitha Iyer', role: 'Chef', isManager: false, phone: '9876543217', email: 'kavitha@hotel.com', age: 31, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[1], salary: 35000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: false, tasks: [] },
 ];
 
 export const dummyNotifications: Notification[] = [
@@ -303,21 +310,21 @@ export const dummyNotifications: Notification[] = [
 ];
 
 export const dummyInventory: InventoryItem[] = [
-  { id: 'inv-1', name: 'Bath Towels', category: 'Linens', quantity: 5, unit: 'pcs', costPrice: 250, supplier: 'Linen World', lastUpdated: new Date().toISOString(), minStock: 20 },
-  { id: 'inv-2', name: 'Bed Sheets', category: 'Linens', quantity: 45, unit: 'pcs', costPrice: 400, supplier: 'Linen World', lastUpdated: new Date().toISOString(), minStock: 15 },
-  { id: 'inv-3', name: 'Shampoo', category: 'Toiletries', quantity: 120, unit: 'bottles', costPrice: 50, supplier: 'CleanCo', lastUpdated: new Date().toISOString(), minStock: 30 },
-  { id: 'inv-4', name: 'Soap Bars', category: 'Toiletries', quantity: 0, unit: 'pcs', costPrice: 20, supplier: 'CleanCo', lastUpdated: new Date().toISOString(), minStock: 50 },
-  { id: 'inv-5', name: 'Toilet Paper', category: 'Toiletries', quantity: 200, unit: 'rolls', costPrice: 15, supplier: 'CleanCo', lastUpdated: new Date().toISOString(), minStock: 40 },
-  { id: 'inv-6', name: 'Mineral Water', category: 'Mini Bar', quantity: 80, unit: 'bottles', costPrice: 20, supplier: 'AquaPure', lastUpdated: new Date().toISOString(), minStock: 50 },
-  { id: 'inv-7', name: 'Chips', category: 'Mini Bar', quantity: 35, unit: 'packets', costPrice: 30, supplier: 'SnackHub', lastUpdated: new Date().toISOString(), minStock: 20 },
-  { id: 'inv-8', name: 'Cleaning Spray', category: 'Housekeeping', quantity: 12, unit: 'bottles', costPrice: 180, supplier: 'CleanCo', lastUpdated: new Date().toISOString(), minStock: 10 },
-  { id: 'inv-9', name: 'Pillow Covers', category: 'Linens', quantity: 30, unit: 'pcs', costPrice: 150, supplier: 'Linen World', lastUpdated: new Date().toISOString(), minStock: 10 },
-  { id: 'inv-10', name: 'Air Freshener', category: 'Housekeeping', quantity: 8, unit: 'cans', costPrice: 120, supplier: 'CleanCo', lastUpdated: new Date().toISOString(), minStock: 5 },
+  { id: 'inv-1', name: 'Bath Towels', category: 'Linens', quantity: 5, unit: 'pcs', costPrice: 250, mrp: 400, margin: 37.5, supplier: 'Linen World', lastUpdated: new Date().toISOString(), minStock: 20, expiryDate: '' },
+  { id: 'inv-2', name: 'Bed Sheets', category: 'Linens', quantity: 45, unit: 'pcs', costPrice: 400, mrp: 650, margin: 38.5, supplier: 'Linen World', lastUpdated: new Date().toISOString(), minStock: 15, expiryDate: '' },
+  { id: 'inv-3', name: 'Shampoo', category: 'Toiletries', quantity: 120, unit: 'bottles', costPrice: 50, mrp: 90, margin: 44.4, supplier: 'CleanCo', lastUpdated: new Date().toISOString(), minStock: 30, expiryDate: new Date(Date.now() + 86400000 * 90).toISOString() },
+  { id: 'inv-4', name: 'Soap Bars', category: 'Toiletries', quantity: 0, unit: 'pcs', costPrice: 20, mrp: 35, margin: 42.9, supplier: 'CleanCo', lastUpdated: new Date().toISOString(), minStock: 50, expiryDate: new Date(Date.now() + 86400000 * 180).toISOString() },
+  { id: 'inv-5', name: 'Toilet Paper', category: 'Toiletries', quantity: 200, unit: 'rolls', costPrice: 15, mrp: 25, margin: 40, supplier: 'CleanCo', lastUpdated: new Date().toISOString(), minStock: 40, expiryDate: '' },
+  { id: 'inv-6', name: 'Mineral Water', category: 'Mini Bar', quantity: 80, unit: 'bottles', costPrice: 20, mrp: 40, margin: 50, supplier: 'AquaPure', lastUpdated: new Date().toISOString(), minStock: 50, expiryDate: new Date(Date.now() + 86400000 * 30).toISOString() },
+  { id: 'inv-7', name: 'Chips', category: 'Mini Bar', quantity: 35, unit: 'packets', costPrice: 30, mrp: 50, margin: 40, supplier: 'SnackHub', lastUpdated: new Date().toISOString(), minStock: 20, expiryDate: new Date(Date.now() + 86400000 * 10).toISOString() },
+  { id: 'inv-8', name: 'Cleaning Spray', category: 'Housekeeping', quantity: 12, unit: 'bottles', costPrice: 180, mrp: 280, margin: 35.7, supplier: 'CleanCo', lastUpdated: new Date().toISOString(), minStock: 10, expiryDate: new Date(Date.now() + 86400000 * 365).toISOString() },
+  { id: 'inv-9', name: 'Pillow Covers', category: 'Linens', quantity: 30, unit: 'pcs', costPrice: 150, mrp: 250, margin: 40, supplier: 'Linen World', lastUpdated: new Date().toISOString(), minStock: 10, expiryDate: '' },
+  { id: 'inv-10', name: 'Air Freshener', category: 'Housekeeping', quantity: 8, unit: 'cans', costPrice: 120, mrp: 200, margin: 40, supplier: 'CleanCo', lastUpdated: new Date().toISOString(), minStock: 5, expiryDate: new Date(Date.now() + 86400000 * 60).toISOString() },
 ];
 
 export const dummyInventoryBills: InventoryBill[] = [
-  { id: 'ib-1', supplierName: 'Linen World', supplierPhone: '9876500001', supplierAddress: '12 Textile Lane', products: [{ productId: 'inv-1', productName: 'Bath Towels', quantity: 50, unitPrice: 250, total: 12500 }, { productId: 'inv-2', productName: 'Bed Sheets', quantity: 30, unitPrice: 400, total: 12000 }], subtotal: 24500, gst: 4410, total: 28910, date: new Date(Date.now() - 86400000 * 5).toISOString() },
-  { id: 'ib-2', supplierName: 'CleanCo', supplierPhone: '9876500002', supplierAddress: '45 Industrial Park', products: [{ productId: 'inv-3', productName: 'Shampoo', quantity: 100, unitPrice: 50, total: 5000 }, { productId: 'inv-4', productName: 'Soap Bars', quantity: 200, unitPrice: 20, total: 4000 }], subtotal: 9000, gst: 1620, total: 10620, date: new Date(Date.now() - 86400000 * 2).toISOString() },
+  { id: 'ib-1', billNumber: 'INV-2025-001', supplierName: 'Linen World', supplierPhone: '9876500001', supplierAddress: '12 Textile Lane', products: [{ productId: 'inv-1', productName: 'Bath Towels', quantity: 50, unitPrice: 250, mrp: 400, margin: 37.5, expiryDate: '', total: 12500 }, { productId: 'inv-2', productName: 'Bed Sheets', quantity: 30, unitPrice: 400, mrp: 650, margin: 38.5, expiryDate: '', total: 12000 }], subtotal: 24500, gst: 4410, total: 28910, date: new Date(Date.now() - 86400000 * 5).toISOString() },
+  { id: 'ib-2', billNumber: 'INV-2025-002', supplierName: 'CleanCo', supplierPhone: '9876500002', supplierAddress: '45 Industrial Park', products: [{ productId: 'inv-3', productName: 'Shampoo', quantity: 100, unitPrice: 50, mrp: 90, margin: 44.4, expiryDate: new Date(Date.now() + 86400000 * 90).toISOString(), total: 5000 }, { productId: 'inv-4', productName: 'Soap Bars', quantity: 200, unitPrice: 20, mrp: 35, margin: 42.9, expiryDate: new Date(Date.now() + 86400000 * 180).toISOString(), total: 4000 }], subtotal: 9000, gst: 1620, total: 10620, date: new Date(Date.now() - 86400000 * 2).toISOString() },
 ];
 
 export const dummyInventoryTransactions: InventoryTransaction[] = [
@@ -349,10 +356,16 @@ export const dummyBookingHistory: BookingHistory[] = [
 ];
 
 export const dummyHotels: Hotel[] = [
-  { id: 'h-1', name: 'Grand Palace Hotel', location: 'Mumbai', owner: 'Sanjay Kapoor', status: 'active', rooms: 50, subscription: 'yearly', revenue: 5200000, createdAt: new Date(Date.now() - 86400000 * 365).toISOString() },
-  { id: 'h-2', name: 'Sea View Resort', location: 'Goa', owner: 'Maria Fernandes', status: 'active', rooms: 30, subscription: 'monthly', revenue: 2800000, createdAt: new Date(Date.now() - 86400000 * 180).toISOString() },
-  { id: 'h-3', name: 'Mountain Lodge', location: 'Shimla', owner: 'Ravi Thakur', status: 'inactive', rooms: 20, subscription: 'monthly', revenue: 900000, createdAt: new Date(Date.now() - 86400000 * 90).toISOString() },
-  { id: 'h-4', name: 'City Business Hotel', location: 'Delhi', owner: 'Neha Agarwal', status: 'pending', rooms: 40, subscription: 'yearly', revenue: 0, createdAt: new Date().toISOString() },
+  { id: 'h-1', name: 'Grand Palace Hotel', location: 'Mumbai', owner: 'Sanjay Kapoor', email: 'sanjay@grandpalace.com', status: 'active', rooms: 50, subscription: 'yearly', subscriptionStart: new Date(Date.now() - 86400000 * 300).toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 65).toISOString(), revenue: 5200000, createdAt: new Date(Date.now() - 86400000 * 365).toISOString() },
+  { id: 'h-2', name: 'Sea View Resort', location: 'Goa', owner: 'Maria Fernandes', email: 'maria@seaview.com', status: 'active', rooms: 30, subscription: 'monthly', subscriptionStart: new Date(Date.now() - 86400000 * 20).toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 10).toISOString(), revenue: 2800000, createdAt: new Date(Date.now() - 86400000 * 180).toISOString() },
+  { id: 'h-3', name: 'Mountain Lodge', location: 'Shimla', owner: 'Ravi Thakur', email: 'ravi@mountainlodge.com', status: 'inactive', rooms: 20, subscription: 'monthly', subscriptionStart: new Date(Date.now() - 86400000 * 60).toISOString(), subscriptionEnd: new Date(Date.now() - 86400000 * 30).toISOString(), revenue: 900000, createdAt: new Date(Date.now() - 86400000 * 90).toISOString() },
+  { id: 'h-4', name: 'City Business Hotel', location: 'Delhi', owner: 'Neha Agarwal', email: 'neha@citybusiness.com', status: 'pending', rooms: 40, subscription: 'yearly', subscriptionStart: '', subscriptionEnd: '', revenue: 0, createdAt: new Date().toISOString() },
+];
+
+export const dummyHotelQueries: HotelQuery[] = [
+  { id: 'q-1', hotelId: 'h-1', hotelName: 'Grand Palace Hotel', subject: 'Payment gateway issue', message: 'We are facing issues with UPI payments not reflecting in our dashboard.', status: 'open', createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+  { id: 'q-2', hotelId: 'h-2', hotelName: 'Sea View Resort', subject: 'Feature request - Spa module', message: 'Can you add a dedicated spa booking module to our system?', status: 'open', createdAt: new Date(Date.now() - 86400000 * 1).toISOString() },
+  { id: 'q-3', hotelId: 'h-1', hotelName: 'Grand Palace Hotel', subject: 'Report export not working', message: 'Excel export in the reports section is showing blank files.', status: 'resolved', createdAt: new Date(Date.now() - 86400000 * 10).toISOString(), response: 'Fixed in the latest update. Please refresh your browser cache.' },
 ];
 
 export const dummySubscriptionPlans: SubscriptionPlan[] = [
@@ -407,4 +420,10 @@ export const housekeepingData = [
   { name: 'Ready', value: 14, color: 'hsl(142,71%,45%)' },
   { name: 'Dirty', value: 6, color: 'hsl(0,72%,51%)' },
   { name: 'Out-of-Order', value: 4, color: 'hsl(45,100%,51%)' },
+];
+
+export const superAdminMonthlyEarnings = [
+  { name: 'Jan', earnings: 120000, hotels: 8 }, { name: 'Feb', earnings: 145000, hotels: 10 },
+  { name: 'Mar', earnings: 160000, hotels: 12 }, { name: 'Apr', earnings: 135000, hotels: 11 },
+  { name: 'May', earnings: 180000, hotels: 14 }, { name: 'Jun', earnings: 200000, hotels: 16 },
 ];

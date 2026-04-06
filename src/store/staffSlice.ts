@@ -21,6 +21,9 @@ const staffSlice = createSlice({
     clearSelectedStaff(state) {
       state.selectedStaff = null;
     },
+    addStaffMember(state, action: PayloadAction<StaffMember>) {
+      state.members.push(action.payload);
+    },
     markAttendance(state, action: PayloadAction<{ id: string; status: 'present' | 'half_day' }>) {
       const member = state.members.find(m => m.id === action.payload.id);
       if (member) {
@@ -50,5 +53,5 @@ const staffSlice = createSlice({
   },
 });
 
-export const { selectStaff, clearSelectedStaff, markAttendance, paySalary, assignTask, updateTaskStatus } = staffSlice.actions;
+export const { selectStaff, clearSelectedStaff, addStaffMember, markAttendance, paySalary, assignTask, updateTaskStatus } = staffSlice.actions;
 export default staffSlice.reducer;
