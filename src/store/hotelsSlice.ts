@@ -1,14 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Hotel, SubscriptionPlan, dummyHotels, dummySubscriptionPlans } from './dummyData';
+import { Hotel, SubscriptionPlan, HotelQuery, dummyHotels, dummySubscriptionPlans, dummyHotelQueries } from './dummyData';
 
 interface HotelsState {
   hotels: Hotel[];
   plans: SubscriptionPlan[];
+  queries: HotelQuery[];
 }
 
 const initialState: HotelsState = {
   hotels: dummyHotels,
   plans: dummySubscriptionPlans,
+  queries: dummyHotelQueries,
 };
 
 const hotelsSlice = createSlice({
@@ -30,8 +32,12 @@ const hotelsSlice = createSlice({
       const h = state.hotels.find(h => h.id === action.payload.id);
       if (h) h.status = action.payload.status;
     },
+    respondToQuery(state, action: PayloadAction<{ queryId: string; response: string }>) {
+      const q = state.queries.find(q => q.id === action.payload.queryId);
+      if (q) { q.response = action.payload.response; q.status = 'resolved'; }
+    },
   },
 });
 
-export const { approveHotel, rejectHotel, addHotel, updateHotelStatus } = hotelsSlice.actions;
+export const { approveHotel, rejectHotel, addHotel, updateHotelStatus, respondToQuery } = hotelsSlice.actions;
 export default hotelsSlice.reducer;
