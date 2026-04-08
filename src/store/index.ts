@@ -8,9 +8,11 @@ import inventoryReducer from './inventorySlice';
 import billingReducer from './billingSlice';
 import crmReducer from './crmSlice';
 import hotelsReducer from './hotelsSlice';
+import authReducer from './authSlice';
 
 export const store = configureStore({
   reducer: {
+    auth: authReducer,
     rooms: roomsReducer,
     services: servicesReducer,
     staff: staffReducer,

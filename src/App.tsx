@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AdminLayout from "./components/AdminLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
 import RoomsPage from "./pages/RoomsPage";
@@ -26,28 +28,39 @@ const App = () => (
     <TooltipProvider>
       <Sonner />
       <BrowserRouter>
-        <AdminLayout>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/rooms" element={<RoomsPage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/staff" element={<StaffPage />} />
-            <Route path="/hr" element={<HRPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/inventory" element={<InventoryPage />} />
-            <Route path="/inventory/create-bill" element={<InventoryPage />} />
-            <Route path="/inventory/history" element={<InventoryPage />} />
-            <Route path="/booking-history" element={<BookingHistoryPage />} />
-            <Route path="/customers" element={<GuestCRMPage />} />
-            <Route path="/billing" element={<BillingPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/guest-crm" element={<GuestCRMPage />} />
-            <Route path="/super-admin" element={<SuperAdminPage />} />
-            <Route path="/help" element={<HelpPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AdminLayout>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/*" element={
+            <ProtectedRoute>
+              <AdminLayout>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/rooms" element={<RoomsPage />} />
+                  <Route path="/services" element={<ServicesPage />} />
+                  <Route path="/staff" element={<StaffPage />} />
+                  <Route path="/hr" element={<HRPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/inventory" element={<InventoryPage />} />
+                  <Route path="/inventory/create-bill" element={<InventoryPage />} />
+                  <Route path="/inventory/history" element={<InventoryPage />} />
+                  <Route path="/booking-history" element={<BookingHistoryPage />} />
+                  <Route path="/customers" element={<GuestCRMPage />} />
+                  <Route path="/billing" element={<BillingPage />} />
+                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route path="/guest-crm" element={<GuestCRMPage />} />
+                  <Route path="/super-admin" element={
+                    <ProtectedRoute allowedRoles={['superadmin']}>
+                      <SuperAdminPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/help" element={<HelpPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AdminLayout>
+            </ProtectedRoute>
+          } />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
