@@ -28,13 +28,13 @@ const LoginPage = () => {
     }
 
     dispatch(login({ id: user.id, name: user.name, email: user.email, role: user.role, hotelId: user.hotelId }));
-    navigate(user.role === 'superadmin' ? '/super-admin' : '/dashboard');
+    navigate(user.role === 'superadmin' ? '/super-admin' : '/');
   };
 
   const quickLogin = (role: UserRole) => {
     const user = demoUsers.find(u => u.role === role)!;
     dispatch(login({ id: user.id, name: user.name, email: user.email, role: user.role, hotelId: user.hotelId }));
-    navigate(role === 'superadmin' ? '/super-admin' : '/dashboard');
+    navigate(role === 'superadmin' ? '/super-admin' : '/');
   };
 
   return (

@@ -15,6 +15,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    // Redirect to the user's own home
     return <Navigate to={user.role === 'superadmin' ? '/super-admin' : '/dashboard'} replace />;
   }
 

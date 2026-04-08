@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AdminLayout from "./components/AdminLayout";
@@ -20,8 +20,23 @@ import BillingPage from "./pages/BillingPage";
 import ReportsPage from "./pages/ReportsPage";
 import HelpPage from "./pages/HelpPage";
 import NotFound from "./pages/NotFound";
+import { useAppSelector } from "./store";
 
 const queryClient = new QueryClient();
+
+/* Wrapper that redirects superadmin away from hotel pages */
+const HotelOnly = ({ children }: { children: React.ReactNode }) => {
+  const role = useAppSelector(s => s.auth.user?.role);
+  if (role === 'superadmin') return <Navigate to="/super-admin" replace />;
+  return <>{children}</>;
+};
+
+/* Wrapper that redirects hoteladmin away from super-admin pages */
+const SuperOnly = ({ children }: { children: React.ReactNode }) => {
+  const role = useAppSelector(s => s.auth.user?.role);
+  if (role !== 'superadmin') return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -34,27 +49,27 @@ const App = () => (
             <ProtectedRoute>
               <AdminLayout>
                 <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/rooms" element={<RoomsPage />} />
-                  <Route path="/services" element={<ServicesPage />} />
-                  <Route path="/staff" element={<StaffPage />} />
-                  <Route path="/hr" element={<HRPage />} />
+                  {/* Hotel Admin routes — blocked for superadmin */}
+                  <Route path="/" element={<HotelOnly><HomePage /></HotelOnly>} />
+                  <Route path="/dashboard" element={<HotelOnly><DashboardPage /></HotelOnly>} />
+                  <Route path="/rooms" element={<HotelOnly><RoomsPage /></HotelOnly>} />
+                  <Route path="/services" element={<HotelOnly><ServicesPage /></HotelOnly>} />
+                  <Route path="/staff" element={<HotelOnly><StaffPage /></HotelOnly>} />
+                  <Route path="/hr" element={<HotelOnly><HRPage /></HotelOnly>} />
                   <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/inventory" element={<InventoryPage />} />
-                  <Route path="/inventory/create-bill" element={<InventoryPage />} />
-                  <Route path="/inventory/history" element={<InventoryPage />} />
-                  <Route path="/booking-history" element={<BookingHistoryPage />} />
-                  <Route path="/customers" element={<GuestCRMPage />} />
-                  <Route path="/billing" element={<BillingPage />} />
-                  <Route path="/reports" element={<ReportsPage />} />
-                  <Route path="/guest-crm" element={<GuestCRMPage />} />
-                  <Route path="/super-admin" element={
-                    <ProtectedRoute allowedRoles={['superadmin']}>
-                      <SuperAdminPage />
-                    </ProtectedRoute>
-                  } />
+                  <Route path="/inventory" element={<HotelOnly><InventoryPage /></HotelOnly>} />
+                  <Route path="/inventory/create-bill" element={<HotelOnly><InventoryPage /></HotelOnly>} />
+                  <Route path="/inventory/history" element={<HotelOnly><InventoryPage /></HotelOnly>} />
+                  <Route path="/booking-history" element={<HotelOnly><BookingHistoryPage /></HotelOnly>} />
+                  <Route path="/customers" element={<HotelOnly><GuestCRMPage /></HotelOnly>} />
+                  <Route path="/billing" element={<HotelOnly><BillingPage /></HotelOnly>} />
+                  <Route path="/reports" element={<HotelOnly><ReportsPage /></HotelOnly>} />
+                  <Route path="/guest-crm" element={<HotelOnly><GuestCRMPage /></HotelOnly>} />
                   <Route path="/help" element={<HelpPage />} />
+
+                  {/* Super Admin routes — blocked for hoteladmin */}
+                  <Route path="/super-admin" element={<SuperOnly><SuperAdminPage /></SuperOnly>} />
+
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AdminLayout>
