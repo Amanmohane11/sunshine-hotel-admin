@@ -24,12 +24,16 @@ const moreLinks = [
   { to: '/customers', icon: UserCircle, label: 'Customers' },
   { to: '/billing', icon: FileText, label: 'Billing' },
   { to: '/reports', icon: BarChart3, label: 'Reports' },
-  { to: '/super-admin', icon: Building2, label: 'Super Admin' },
   { to: '/help', icon: HelpCircle, label: 'Help & Support' },
+];
+
+const superAdminLinks = [
+  { to: '/super-admin', icon: Building2, label: 'Super Admin' },
 ];
 
 const AdminSidebar = () => {
   const unreadCount = useAppSelector(s => s.notifications.items.filter(n => !n.read).length);
+  const userRole = useAppSelector(s => s.auth.user?.role);
   const location = useLocation();
   const [inventoryOpen, setInventoryOpen] = useState(location.pathname.startsWith('/inventory'));
 
@@ -106,6 +110,7 @@ const AdminSidebar = () => {
       </div>
       <nav className="flex flex-col gap-0.5 px-3">
         {moreLinks.map(renderLink)}
+        {userRole === 'superadmin' && superAdminLinks.map(renderLink)}
       </nav>
     </aside>
   );
