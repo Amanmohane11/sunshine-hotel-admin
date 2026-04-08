@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, BedDouble, ConciergeBell, Users, Wallet, Bell, Package, History, UserCircle, Building2, ChevronDown, ChevronRight, HelpCircle, FileText, BarChart3, Receipt, MessageSquare, CreditCard, Inbox } from 'lucide-react';
+import { Home, LayoutDashboard, BedDouble, ConciergeBell, Users, Wallet, Bell, Package, History, UserCircle, Building2, ChevronDown, ChevronRight, FileText, BarChart3, Receipt, MessageSquare, CreditCard, Clock } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAppSelector } from '@/store';
@@ -17,7 +17,7 @@ const hotelMainLinks = [
 const inventoryLinks = [
   { to: '/inventory', icon: Package, label: 'All Products' },
   { to: '/inventory/create-bill', icon: Receipt, label: 'Create Bill' },
-  { to: '/inventory/history', icon: History, label: 'Bill History' },
+  { to: '/inventory/history', icon: History, label: 'History' },
 ];
 
 const hotelMoreLinks = [
@@ -25,13 +25,15 @@ const hotelMoreLinks = [
   { to: '/customers', icon: UserCircle, label: 'Customers' },
   { to: '/billing', icon: FileText, label: 'Billing' },
   { to: '/reports', icon: BarChart3, label: 'Reports' },
-  { to: '/help', icon: HelpCircle, label: 'Help & Support' },
 ];
 
 /* ── Super Admin links ── */
 const superAdminLinks = [
   { to: '/super-admin', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/help', icon: HelpCircle, label: 'Help & Support' },
+  { to: '/super-admin/hotels', icon: Building2, label: 'Hotels' },
+  { to: '/super-admin/queries', icon: MessageSquare, label: 'Queries' },
+  { to: '/super-admin/requests', icon: Clock, label: 'Requests' },
+  { to: '/super-admin/subscriptions', icon: CreditCard, label: 'Subscriptions' },
 ];
 
 const AdminSidebar = () => {
