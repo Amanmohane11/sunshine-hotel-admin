@@ -8,7 +8,7 @@ import { FeaturePage, ALL_FEATURE_PAGES, SubscriptionPlan } from '@/store/dummyD
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
-const emptyPlan = { name: '', price: '', billing: 'monthly' as const, featureAccess: [] as FeaturePage[], maxRooms: 20 };
+const emptyPlan = { name: '', price: '', billing: 'monthly' as 'monthly' | 'yearly', featureAccess: [] as FeaturePage[], maxRooms: 20 };
 
 const SASubscriptionsPage = () => {
   const dispatch = useAppDispatch();
