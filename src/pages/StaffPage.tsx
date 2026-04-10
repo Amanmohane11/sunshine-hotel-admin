@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store';
-import { markAttendance, selectStaff, clearSelectedStaff, assignTask, updateTaskStatus, addStaffMember } from '@/store/staffSlice';
-import { StaffMember, Shift, WorkType } from '@/store/dummyData';
+import { markAttendance, selectStaff, clearSelectedStaff, assignTask, updateTaskStatus, addStaffMember, updateStaffFeatureAccess } from '@/store/staffSlice';
+import { StaffMember, Shift, WorkType, FeaturePage, ALL_FEATURE_PAGES } from '@/store/dummyData';
 import { toast } from 'sonner';
-import { ArrowLeft, CheckCircle, Plus, ClipboardList, X, Search, UserPlus } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Plus, ClipboardList, X, Search, UserPlus, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const shiftColors: Record<string, string> = {
   morning: 'bg-status-cleaning/10 text-status-cleaning',
@@ -18,7 +19,7 @@ const shiftLabels: Record<Shift, string> = {
   night: '🌙 Night Shift',
 };
 
-const emptyForm = { name: '', phone: '', email: '', age: '', gender: 'Male' as const, shift: 'morning' as Shift, role: '', workType: 'full-time' as WorkType };
+const emptyForm = { name: '', phone: '', email: '', age: '', gender: 'Male' as const, shift: 'morning' as Shift, role: '', workType: 'full-time' as WorkType, featureAccess: ['home'] as FeaturePage[] };
 
 const StaffPage = () => {
   const dispatch = useAppDispatch();
@@ -56,6 +57,7 @@ const StaffPage = () => {
       shift: form.shift, workType: form.workType,
       image: staffImages[Math.floor(Math.random() * staffImages.length)],
       salary: 25000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: false, tasks: [],
+      featureAccess: form.featureAccess,
     }));
     toast.success(`${form.name} added to staff`);
     setForm(emptyForm);
@@ -146,6 +148,10 @@ const StaffPage = () => {
         )}
       </div>
     );
+  };
+
+  const toggleFeature = (key: FeaturePage) => {
+    setForm(f => ({ ...f, featureAccess: f.featureAccess.includes(key) ? f.featureAccess.filter(k => k !== key) : [...f.featureAccess, key] }));
   };
 
   return (
@@ -242,6 +248,19 @@ const StaffPage = () => {
                   </select>
                 </div>
               </div>
+
+              {/* Feature Access */}
+              <div>
+                <label className="block text-xs font-semibold mb-2 flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-primary" /> Feature Access</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {ALL_FEATURE_PAGES.map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 p-2.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all cursor-pointer">
+                      <Checkbox checked={form.featureAccess.includes(key)} onCheckedChange={() => toggleFeature(key)} />
+                      <span className="text-xs font-medium">{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={() => { setShowAddModal(false); setErrors({}); }} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all">Cancel</button>
@@ -256,6 +275,16 @@ const StaffPage = () => {
 
 const StaffProfile = ({ member, onBack, dispatch }: { member: StaffMember; onBack: () => void; dispatch: any }) => {
   const todayMarked = member.attendance.some(a => a.date === new Date().toISOString().split('T')[0]);
+  const [localAccess, setLocalAccess] = useState<FeaturePage[]>([...member.featureAccess]);
+
+  const toggleFeature = (key: FeaturePage) => {
+    setLocalAccess(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  };
+
+  const saveAccess = () => {
+    dispatch(updateStaffFeatureAccess({ id: member.id, featureAccess: localAccess }));
+    toast.success('Feature access updated');
+  };
 
   return (
     <div className="max-w-2xl animate-slide-up">
@@ -281,6 +310,20 @@ const StaffProfile = ({ member, onBack, dispatch }: { member: StaffMember; onBac
           <div className="bg-muted/40 rounded-xl p-3"><span className="text-xs text-muted-foreground uppercase tracking-wider">Leaves</span><p className="font-semibold mt-0.5">{member.leaves}</p></div>
           <div className="bg-muted/40 rounded-xl p-3"><span className="text-xs text-muted-foreground uppercase tracking-wider">Half Days</span><p className="font-semibold mt-0.5">{member.halfDays}</p></div>
           <div className="bg-muted/40 rounded-xl p-3"><span className="text-xs text-muted-foreground uppercase tracking-wider">Salary</span><p className="font-semibold mt-0.5">₹{member.salary.toLocaleString()}</p></div>
+        </div>
+
+        {/* Feature Access Control */}
+        <div className="mb-6">
+          <h3 className="font-semibold mb-3 flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /> Feature Access Control</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+            {ALL_FEATURE_PAGES.map(({ key, label }) => (
+              <label key={key} className="flex items-center gap-2 p-2.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all cursor-pointer">
+                <Checkbox checked={localAccess.includes(key)} onCheckedChange={() => toggleFeature(key)} />
+                <span className="text-xs font-medium">{label}</span>
+              </label>
+            ))}
+          </div>
+          <button onClick={saveAccess} className="px-5 py-2 rounded-xl gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all btn-ripple shadow-sm shadow-primary/20">Save Access</button>
         </div>
 
         {member.tasks.length > 0 && (

@@ -71,6 +71,22 @@ export interface ServiceOrder {
 export type Shift = 'morning' | 'afternoon' | 'night';
 export type WorkType = 'full-time' | 'part-time';
 
+// All possible feature access pages
+export type FeaturePage = 'home' | 'dashboard' | 'staff' | 'rooms' | 'services' | 'inventory' | 'customers' | 'reports' | 'history' | 'hr_payroll';
+
+export const ALL_FEATURE_PAGES: { key: FeaturePage; label: string }[] = [
+  { key: 'home', label: 'Home' },
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'staff', label: 'Staff' },
+  { key: 'rooms', label: 'Rooms' },
+  { key: 'services', label: 'Services' },
+  { key: 'inventory', label: 'Inventory' },
+  { key: 'customers', label: 'Customers' },
+  { key: 'reports', label: 'Reports' },
+  { key: 'history', label: 'History' },
+  { key: 'hr_payroll', label: 'HR & Payroll' },
+];
+
 export interface TaskAssignment {
   id: string;
   roomId: string;
@@ -98,6 +114,7 @@ export interface StaffMember {
   halfDays: number;
   salaryPaid: boolean;
   tasks: TaskAssignment[];
+  featureAccess: FeaturePage[];
 }
 
 export interface Notification {
@@ -183,13 +200,20 @@ export interface Hotel {
   location: string;
   owner: string;
   email: string;
+  phone: string;
   status: 'active' | 'inactive' | 'pending';
   rooms: number;
-  subscription: 'monthly' | 'yearly';
+  roomLimit: number;
+  subscription: string; // plan id
   subscriptionStart: string;
   subscriptionEnd: string;
   revenue: number;
   createdAt: string;
+  image: string;
+  adminId: string;
+  adminPassword: string;
+  featureAccess: FeaturePage[];
+  subscriptionActive: boolean;
 }
 
 export interface SubscriptionPlan {
@@ -198,6 +222,7 @@ export interface SubscriptionPlan {
   price: number;
   billing: 'monthly' | 'yearly';
   features: string[];
+  featureAccess: FeaturePage[];
   maxRooms: number;
 }
 
@@ -290,15 +315,17 @@ const staffImages = [
   'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=face',
 ];
 
+const allFeatures: FeaturePage[] = ['home', 'dashboard', 'staff', 'rooms', 'services', 'inventory', 'customers', 'reports', 'history', 'hr_payroll'];
+
 export const dummyStaff: StaffMember[] = [
-  { id: 'st1', name: 'Rajesh Kumar', role: 'General Manager', isManager: true, phone: '9876543210', email: 'rajesh@hotel.com', age: 42, gender: 'Male', shift: 'morning', workType: 'full-time', image: staffImages[0], salary: 80000, attendance: [], leaves: 1, halfDays: 0, salaryPaid: false, tasks: [] },
-  { id: 'st2', name: 'Priya Sharma', role: 'Front Desk Manager', isManager: true, phone: '9876543211', email: 'priya@hotel.com', age: 35, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[1], salary: 55000, attendance: [], leaves: 0, halfDays: 1, salaryPaid: false, tasks: [] },
-  { id: 'st3', name: 'Amit Patel', role: 'Housekeeping Manager', isManager: true, phone: '9876543212', email: 'amit@hotel.com', age: 38, gender: 'Male', shift: 'afternoon', workType: 'full-time', image: staffImages[2], salary: 50000, attendance: [], leaves: 2, halfDays: 0, salaryPaid: true, tasks: [] },
-  { id: 'st4', name: 'Sneha Reddy', role: 'Receptionist', isManager: false, phone: '9876543213', email: 'sneha@hotel.com', age: 26, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[3], salary: 25000, attendance: [], leaves: 3, halfDays: 2, salaryPaid: false, tasks: [{ id: 'task-1', roomId: 'room-3', roomNumber: '103', type: 'cleaning', status: 'assigned', assignedAt: new Date().toISOString() }] },
-  { id: 'st5', name: 'Vikram Singh', role: 'Housekeeping Staff', isManager: false, phone: '9876543214', email: 'vikram@hotel.com', age: 30, gender: 'Male', shift: 'afternoon', workType: 'full-time', image: staffImages[4], salary: 20000, attendance: [], leaves: 1, halfDays: 1, salaryPaid: false, tasks: [{ id: 'task-2', roomId: 'room-9', roomNumber: '303', type: 'cleaning', status: 'in_progress', assignedAt: new Date().toISOString() }] },
-  { id: 'st6', name: 'Meera Nair', role: 'Room Service', isManager: false, phone: '9876543215', email: 'meera@hotel.com', age: 28, gender: 'Female', shift: 'night', workType: 'part-time', image: staffImages[5], salary: 22000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: true, tasks: [] },
-  { id: 'st7', name: 'Arjun Das', role: 'Security', isManager: false, phone: '9876543216', email: 'arjun@hotel.com', age: 33, gender: 'Male', shift: 'night', workType: 'full-time', image: staffImages[0], salary: 18000, attendance: [], leaves: 2, halfDays: 1, salaryPaid: false, tasks: [] },
-  { id: 'st8', name: 'Kavitha Iyer', role: 'Chef', isManager: false, phone: '9876543217', email: 'kavitha@hotel.com', age: 31, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[1], salary: 35000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: false, tasks: [] },
+  { id: 'st1', name: 'Rajesh Kumar', role: 'General Manager', isManager: true, phone: '9876543210', email: 'rajesh@hotel.com', age: 42, gender: 'Male', shift: 'morning', workType: 'full-time', image: staffImages[0], salary: 80000, attendance: [], leaves: 1, halfDays: 0, salaryPaid: false, tasks: [], featureAccess: allFeatures },
+  { id: 'st2', name: 'Priya Sharma', role: 'Front Desk Manager', isManager: true, phone: '9876543211', email: 'priya@hotel.com', age: 35, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[1], salary: 55000, attendance: [], leaves: 0, halfDays: 1, salaryPaid: false, tasks: [], featureAccess: ['home', 'dashboard', 'rooms', 'customers', 'reports', 'history', 'services'] },
+  { id: 'st3', name: 'Amit Patel', role: 'Housekeeping Manager', isManager: true, phone: '9876543212', email: 'amit@hotel.com', age: 38, gender: 'Male', shift: 'afternoon', workType: 'full-time', image: staffImages[2], salary: 50000, attendance: [], leaves: 2, halfDays: 0, salaryPaid: true, tasks: [], featureAccess: ['home', 'rooms', 'inventory'] },
+  { id: 'st4', name: 'Sneha Reddy', role: 'Receptionist', isManager: false, phone: '9876543213', email: 'sneha@hotel.com', age: 26, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[3], salary: 25000, attendance: [], leaves: 3, halfDays: 2, salaryPaid: false, tasks: [{ id: 'task-1', roomId: 'room-3', roomNumber: '103', type: 'cleaning', status: 'assigned', assignedAt: new Date().toISOString() }], featureAccess: ['home', 'rooms'] },
+  { id: 'st5', name: 'Vikram Singh', role: 'Housekeeping Staff', isManager: false, phone: '9876543214', email: 'vikram@hotel.com', age: 30, gender: 'Male', shift: 'afternoon', workType: 'full-time', image: staffImages[4], salary: 20000, attendance: [], leaves: 1, halfDays: 1, salaryPaid: false, tasks: [{ id: 'task-2', roomId: 'room-9', roomNumber: '303', type: 'cleaning', status: 'in_progress', assignedAt: new Date().toISOString() }], featureAccess: ['rooms'] },
+  { id: 'st6', name: 'Meera Nair', role: 'Room Service', isManager: false, phone: '9876543215', email: 'meera@hotel.com', age: 28, gender: 'Female', shift: 'night', workType: 'part-time', image: staffImages[5], salary: 22000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: true, tasks: [], featureAccess: ['home', 'rooms', 'services'] },
+  { id: 'st7', name: 'Arjun Das', role: 'Security', isManager: false, phone: '9876543216', email: 'arjun@hotel.com', age: 33, gender: 'Male', shift: 'night', workType: 'full-time', image: staffImages[0], salary: 18000, attendance: [], leaves: 2, halfDays: 1, salaryPaid: false, tasks: [], featureAccess: ['home'] },
+  { id: 'st8', name: 'Kavitha Iyer', role: 'Chef', isManager: false, phone: '9876543217', email: 'kavitha@hotel.com', age: 31, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[1], salary: 35000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: false, tasks: [], featureAccess: ['home', 'services', 'inventory'] },
 ];
 
 export const dummyNotifications: Notification[] = [
@@ -355,11 +382,18 @@ export const dummyBookingHistory: BookingHistory[] = [
   { id: 'bh-4', guestName: 'Divya Patel', roomNumber: '404', checkIn: new Date(Date.now() - 86400000 * 30).toISOString(), checkOut: new Date(Date.now() - 86400000 * 28).toISOString(), services: [{ id: 'bhs-4', name: 'Room Service', price: 800, quantity: 1, type: 'room_service' }], totalBill: 8800, paymentStatus: 'pending' },
 ];
 
+const hotelImages = [
+  'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400&h=300&fit=crop',
+];
+
 export const dummyHotels: Hotel[] = [
-  { id: 'h-1', name: 'Grand Palace Hotel', location: 'Mumbai', owner: 'Sanjay Kapoor', email: 'sanjay@grandpalace.com', status: 'active', rooms: 50, subscription: 'yearly', subscriptionStart: new Date(Date.now() - 86400000 * 300).toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 65).toISOString(), revenue: 5200000, createdAt: new Date(Date.now() - 86400000 * 365).toISOString() },
-  { id: 'h-2', name: 'Sea View Resort', location: 'Goa', owner: 'Maria Fernandes', email: 'maria@seaview.com', status: 'active', rooms: 30, subscription: 'monthly', subscriptionStart: new Date(Date.now() - 86400000 * 20).toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 10).toISOString(), revenue: 2800000, createdAt: new Date(Date.now() - 86400000 * 180).toISOString() },
-  { id: 'h-3', name: 'Mountain Lodge', location: 'Shimla', owner: 'Ravi Thakur', email: 'ravi@mountainlodge.com', status: 'inactive', rooms: 20, subscription: 'monthly', subscriptionStart: new Date(Date.now() - 86400000 * 60).toISOString(), subscriptionEnd: new Date(Date.now() - 86400000 * 30).toISOString(), revenue: 900000, createdAt: new Date(Date.now() - 86400000 * 90).toISOString() },
-  { id: 'h-4', name: 'City Business Hotel', location: 'Delhi', owner: 'Neha Agarwal', email: 'neha@citybusiness.com', status: 'pending', rooms: 40, subscription: 'yearly', subscriptionStart: '', subscriptionEnd: '', revenue: 0, createdAt: new Date().toISOString() },
+  { id: 'h-1', name: 'Grand Palace Hotel', location: 'Mumbai', owner: 'Sanjay Kapoor', email: 'sanjay@grandpalace.com', phone: '9876500001', status: 'active', rooms: 50, roomLimit: 60, subscription: 'plan-3', subscriptionStart: new Date(Date.now() - 86400000 * 300).toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 65).toISOString(), revenue: 5200000, createdAt: new Date(Date.now() - 86400000 * 365).toISOString(), image: hotelImages[0], adminId: 'grandpalace_admin', adminPassword: 'hotel123', featureAccess: allFeatures, subscriptionActive: true },
+  { id: 'h-2', name: 'Sea View Resort', location: 'Goa', owner: 'Maria Fernandes', email: 'maria@seaview.com', phone: '9876500002', status: 'active', rooms: 30, roomLimit: 40, subscription: 'plan-2', subscriptionStart: new Date(Date.now() - 86400000 * 20).toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 10).toISOString(), revenue: 2800000, createdAt: new Date(Date.now() - 86400000 * 180).toISOString(), image: hotelImages[1], adminId: 'seaview_admin', adminPassword: 'hotel123', featureAccess: ['home', 'dashboard', 'rooms', 'staff', 'hr_payroll'], subscriptionActive: true },
+  { id: 'h-3', name: 'Mountain Lodge', location: 'Shimla', owner: 'Ravi Thakur', email: 'ravi@mountainlodge.com', phone: '9876500003', status: 'inactive', rooms: 20, roomLimit: 25, subscription: 'plan-1', subscriptionStart: new Date(Date.now() - 86400000 * 60).toISOString(), subscriptionEnd: new Date(Date.now() - 86400000 * 30).toISOString(), revenue: 900000, createdAt: new Date(Date.now() - 86400000 * 90).toISOString(), image: hotelImages[2], adminId: 'mountain_admin', adminPassword: 'hotel123', featureAccess: ['home', 'dashboard', 'rooms'], subscriptionActive: false },
+  { id: 'h-4', name: 'City Business Hotel', location: 'Delhi', owner: 'Neha Agarwal', email: 'neha@citybusiness.com', phone: '9876500004', status: 'pending', rooms: 40, roomLimit: 50, subscription: 'plan-2', subscriptionStart: '', subscriptionEnd: '', revenue: 0, createdAt: new Date().toISOString(), image: hotelImages[3], adminId: 'citybusiness_admin', adminPassword: 'hotel123', featureAccess: [], subscriptionActive: false },
 ];
 
 export const dummyHotelQueries: HotelQuery[] = [
@@ -369,9 +403,9 @@ export const dummyHotelQueries: HotelQuery[] = [
 ];
 
 export const dummySubscriptionPlans: SubscriptionPlan[] = [
-  { id: 'plan-1', name: 'Starter', price: 4999, billing: 'monthly', features: ['Up to 20 rooms', 'Basic reports', 'Email support'], maxRooms: 20 },
-  { id: 'plan-2', name: 'Professional', price: 9999, billing: 'monthly', features: ['Up to 50 rooms', 'Advanced analytics', 'Priority support', 'Inventory management'], maxRooms: 50 },
-  { id: 'plan-3', name: 'Enterprise', price: 99999, billing: 'yearly', features: ['Unlimited rooms', 'Full analytics suite', '24/7 support', 'Inventory', 'CRM', 'API access'], maxRooms: 999 },
+  { id: 'plan-1', name: 'Basic', price: 4999, billing: 'monthly', features: ['Home', 'Dashboard', 'Rooms'], featureAccess: ['home', 'dashboard', 'rooms'], maxRooms: 20 },
+  { id: 'plan-2', name: 'Professional', price: 9999, billing: 'monthly', features: ['Home', 'Dashboard', 'Rooms', 'Staff', 'HR & Payroll'], featureAccess: ['home', 'dashboard', 'rooms', 'staff', 'hr_payroll'], maxRooms: 50 },
+  { id: 'plan-3', name: 'Enterprise', price: 24999, billing: 'monthly', features: ['Full Access (All Modules)'], featureAccess: allFeatures, maxRooms: 999 },
 ];
 
 export const revenueData = {

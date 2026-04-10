@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, BedDouble, ConciergeBell, Users, Wallet, Bell, Package, History, UserCircle, Building2, ChevronDown, ChevronRight, FileText, BarChart3, Receipt, MessageSquare, CreditCard, Clock } from 'lucide-react';
+import { Home, LayoutDashboard, BedDouble, ConciergeBell, Users, Wallet, Package, History, UserCircle, Building2, ChevronDown, ChevronRight, FileText, BarChart3, Receipt, MessageSquare, CreditCard } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAppSelector } from '@/store';
@@ -6,12 +6,12 @@ import { useState } from 'react';
 
 /* ── Hotel Admin links ── */
 const hotelMainLinks = [
-  { to: '/', icon: Home, label: 'Home' },
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/rooms', icon: BedDouble, label: 'Rooms' },
-  { to: '/services', icon: ConciergeBell, label: 'Services' },
-  { to: '/staff', icon: Users, label: 'Staff' },
-  { to: '/hr', icon: Wallet, label: 'HR & Payroll' },
+  { to: '/', icon: Home, label: 'Home', feature: 'home' as const },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', feature: 'dashboard' as const },
+  { to: '/rooms', icon: BedDouble, label: 'Rooms', feature: 'rooms' as const },
+  { to: '/services', icon: ConciergeBell, label: 'Services', feature: 'services' as const },
+  { to: '/staff', icon: Users, label: 'Staff', feature: 'staff' as const },
+  { to: '/hr', icon: Wallet, label: 'HR & Payroll', feature: 'hr_payroll' as const },
 ];
 
 const inventoryLinks = [
@@ -21,10 +21,10 @@ const inventoryLinks = [
 ];
 
 const hotelMoreLinks = [
-  { to: '/booking-history', icon: History, label: 'History' },
-  { to: '/customers', icon: UserCircle, label: 'Customers' },
-  { to: '/billing', icon: FileText, label: 'Billing' },
-  { to: '/reports', icon: BarChart3, label: 'Reports' },
+  { to: '/booking-history', icon: History, label: 'History', feature: 'history' as const },
+  { to: '/customers', icon: UserCircle, label: 'Customers', feature: 'customers' as const },
+  { to: '/billing', icon: FileText, label: 'Billing', feature: 'history' as const },
+  { to: '/reports', icon: BarChart3, label: 'Reports', feature: 'reports' as const },
 ];
 
 /* ── Super Admin links ── */
@@ -32,12 +32,10 @@ const superAdminLinks = [
   { to: '/super-admin', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/super-admin/hotels', icon: Building2, label: 'Hotels' },
   { to: '/super-admin/queries', icon: MessageSquare, label: 'Queries' },
-  { to: '/super-admin/requests', icon: Clock, label: 'Requests' },
   { to: '/super-admin/subscriptions', icon: CreditCard, label: 'Subscriptions' },
 ];
 
 const AdminSidebar = () => {
-  const unreadCount = useAppSelector(s => s.notifications.items.filter(n => !n.read).length);
   const userRole = useAppSelector(s => s.auth.user?.role);
   const location = useLocation();
   const [inventoryOpen, setInventoryOpen] = useState(location.pathname.startsWith('/inventory'));

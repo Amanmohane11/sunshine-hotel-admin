@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { StaffMember, TaskAssignment, dummyStaff } from './dummyData';
+import { StaffMember, TaskAssignment, FeaturePage, dummyStaff } from './dummyData';
 
 interface StaffState {
   members: StaffMember[];
@@ -23,6 +23,15 @@ const staffSlice = createSlice({
     },
     addStaffMember(state, action: PayloadAction<StaffMember>) {
       state.members.push(action.payload);
+    },
+    updateStaffFeatureAccess(state, action: PayloadAction<{ id: string; featureAccess: FeaturePage[] }>) {
+      const member = state.members.find(m => m.id === action.payload.id);
+      if (member) {
+        member.featureAccess = action.payload.featureAccess;
+        if (state.selectedStaff?.id === action.payload.id) {
+          state.selectedStaff.featureAccess = action.payload.featureAccess;
+        }
+      }
     },
     markAttendance(state, action: PayloadAction<{ id: string; status: 'present' | 'half_day' }>) {
       const member = state.members.find(m => m.id === action.payload.id);
@@ -53,5 +62,5 @@ const staffSlice = createSlice({
   },
 });
 
-export const { selectStaff, clearSelectedStaff, addStaffMember, markAttendance, paySalary, assignTask, updateTaskStatus } = staffSlice.actions;
+export const { selectStaff, clearSelectedStaff, addStaffMember, updateStaffFeatureAccess, markAttendance, paySalary, assignTask, updateTaskStatus } = staffSlice.actions;
 export default staffSlice.reducer;

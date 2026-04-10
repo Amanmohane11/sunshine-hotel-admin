@@ -19,7 +19,6 @@ import BookingHistoryPage from "./pages/BookingHistoryPage";
 import GuestCRMPage from "./pages/GuestCRMPage";
 import SADashboardPage from "./pages/super-admin/SADashboardPage";
 import SAHotelsPage from "./pages/super-admin/SAHotelsPage";
-import SARequestsPage from "./pages/super-admin/SARequestsPage";
 import SAQueriesPage from "./pages/super-admin/SAQueriesPage";
 import SASubscriptionsPage from "./pages/super-admin/SASubscriptionsPage";
 import BillingPage from "./pages/BillingPage";
@@ -71,10 +70,9 @@ const App = () => (
                   <Route path="/guest-crm" element={<HotelOnly><GuestCRMPage /></HotelOnly>} />
                   <Route path="/help" element={<HelpPage />} />
 
-                  {/* Super Admin routes — separate pages */}
+                  {/* Super Admin routes */}
                   <Route path="/super-admin" element={<SuperOnly><SADashboardPage /></SuperOnly>} />
                   <Route path="/super-admin/hotels" element={<SuperOnly><SAHotelsPage /></SuperOnly>} />
-                  <Route path="/super-admin/requests" element={<SuperOnly><SARequestsPage /></SuperOnly>} />
                   <Route path="/super-admin/queries" element={<SuperOnly><SAQueriesPage /></SuperOnly>} />
                   <Route path="/super-admin/subscriptions" element={<SuperOnly><SASubscriptionsPage /></SuperOnly>} />
 
