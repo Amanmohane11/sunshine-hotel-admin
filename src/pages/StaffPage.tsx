@@ -187,6 +187,9 @@ const StaffPage = () => {
             <Search className="w-4 h-4 text-muted-foreground mr-2" />
             <input type="text" placeholder="Search staff..." className="bg-transparent outline-none text-sm w-40" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
+          <button onClick={() => setShowBroadcast(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/50 bg-[hsl(145,63%,42%)]/10 text-sm font-medium hover:bg-[hsl(145,63%,42%)]/20 transition-all">
+            <Send className="w-4 h-4 text-[hsl(145,63%,42%)]" /> Broadcast
+          </button>
           <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all btn-ripple shadow-md shadow-primary/20">
             <UserPlus className="w-4 h-4" /> Add Staff
           </button>
