@@ -293,6 +293,30 @@ const StaffPage = () => {
           </div>
         </div>
       )}
+
+      {/* Broadcast Modal */}
+      {showBroadcast && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-scale-in" onClick={() => setShowBroadcast(false)}>
+          <div className="glass-card rounded-2xl border border-border/50 p-6 w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2"><Send className="w-5 h-5 text-[hsl(145,63%,42%)]" /> Broadcast Message</h2>
+              <button onClick={() => setShowBroadcast(false)} className="p-1.5 rounded-lg hover:bg-muted transition-all"><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Send a message to all {members.length} staff members via WhatsApp</p>
+            <textarea
+              value={broadcastMsg}
+              onChange={e => setBroadcastMsg(e.target.value)}
+              placeholder="Type your message here..."
+              rows={4}
+              className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all resize-none"
+            />
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setShowBroadcast(false)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all">Cancel</button>
+              <button onClick={handleBroadcast} className="flex-1 py-2.5 rounded-xl bg-[hsl(145,63%,42%)] text-white text-sm font-medium hover:opacity-90 transition-all btn-ripple shadow-md">Send to All</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
