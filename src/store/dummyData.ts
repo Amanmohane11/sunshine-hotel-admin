@@ -461,3 +461,31 @@ export const superAdminMonthlyEarnings = [
   { name: 'Mar', earnings: 160000, hotels: 12 }, { name: 'Apr', earnings: 135000, hotels: 11 },
   { name: 'May', earnings: 180000, hotels: 14 }, { name: 'Jun', earnings: 200000, hotels: 16 },
 ];
+
+// Detailed monthly report data
+export interface MonthlyReport {
+  month: string;
+  spending: {
+    total: number;
+    inventory: number;
+    staffSalaries: number;
+    maintenance: number;
+    utilities: number;
+    other: number;
+  };
+  profit: {
+    total: number;
+    roomBookings: number;
+    services: number;
+    otherIncome: number;
+  };
+}
+
+export const monthlyReports: MonthlyReport[] = [
+  { month: 'Jan', spending: { total: 800000, inventory: 250000, staffSalaries: 320000, maintenance: 80000, utilities: 100000, other: 50000 }, profit: { total: 400000, roomBookings: 280000, services: 80000, otherIncome: 40000 } },
+  { month: 'Feb', spending: { total: 750000, inventory: 220000, staffSalaries: 320000, maintenance: 60000, utilities: 95000, other: 55000 }, profit: { total: 350000, roomBookings: 240000, services: 70000, otherIncome: 40000 } },
+  { month: 'Mar', spending: { total: 900000, inventory: 300000, staffSalaries: 320000, maintenance: 100000, utilities: 110000, other: 70000 }, profit: { total: 500000, roomBookings: 350000, services: 100000, otherIncome: 50000 } },
+  { month: 'Apr', spending: { total: 850000, inventory: 280000, staffSalaries: 320000, maintenance: 90000, utilities: 105000, other: 55000 }, profit: { total: 450000, roomBookings: 310000, services: 90000, otherIncome: 50000 } },
+  { month: 'May', spending: { total: 950000, inventory: 320000, staffSalaries: 330000, maintenance: 110000, utilities: 120000, other: 70000 }, profit: { total: 550000, roomBookings: 380000, services: 110000, otherIncome: 60000 } },
+  { month: 'Jun', spending: { total: 1000000, inventory: 350000, staffSalaries: 330000, maintenance: 120000, utilities: 125000, other: 75000 }, profit: { total: 600000, roomBookings: 420000, services: 120000, otherIncome: 60000 } },
+];

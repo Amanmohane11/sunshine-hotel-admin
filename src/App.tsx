@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PasswordGate from "./components/PasswordGate";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
@@ -54,11 +55,11 @@ const App = () => (
                 <Routes>
                   {/* Hotel Admin routes */}
                   <Route path="/" element={<HotelOnly><HomePage /></HotelOnly>} />
-                  <Route path="/dashboard" element={<HotelOnly><DashboardPage /></HotelOnly>} />
+                  <Route path="/dashboard" element={<HotelOnly><PasswordGate pageName="Dashboard"><DashboardPage /></PasswordGate></HotelOnly>} />
                   <Route path="/rooms" element={<HotelOnly><RoomsPage /></HotelOnly>} />
                   <Route path="/services" element={<HotelOnly><ServicesPage /></HotelOnly>} />
                   <Route path="/staff" element={<HotelOnly><StaffPage /></HotelOnly>} />
-                  <Route path="/hr" element={<HotelOnly><HRPage /></HotelOnly>} />
+                  <Route path="/hr" element={<HotelOnly><PasswordGate pageName="HR & Payroll"><HRPage /></PasswordGate></HotelOnly>} />
                   <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/inventory" element={<HotelOnly><AllProductsPage /></HotelOnly>} />
                   <Route path="/inventory/create-bill" element={<HotelOnly><CreateBillPage /></HotelOnly>} />
@@ -66,7 +67,7 @@ const App = () => (
                   <Route path="/booking-history" element={<HotelOnly><BookingHistoryPage /></HotelOnly>} />
                   <Route path="/customers" element={<HotelOnly><GuestCRMPage /></HotelOnly>} />
                   <Route path="/billing" element={<HotelOnly><BillingPage /></HotelOnly>} />
-                  <Route path="/reports" element={<HotelOnly><ReportsPage /></HotelOnly>} />
+                  <Route path="/reports" element={<HotelOnly><PasswordGate pageName="Reports"><ReportsPage /></PasswordGate></HotelOnly>} />
                   <Route path="/guest-crm" element={<HotelOnly><GuestCRMPage /></HotelOnly>} />
                   <Route path="/help" element={<HelpPage />} />
 

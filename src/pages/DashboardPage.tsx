@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { revenueData, bookingData, monthlyFinance, revenueSourceData, housekeepingData } from '@/store/dummyData';
 import { useAppSelector } from '@/store';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, Area, AreaChart } from 'recharts';
@@ -13,6 +14,7 @@ const DashboardPage = () => {
   const [revPeriod, setRevPeriod] = useState<Period>('daily');
   const [bookPeriod, setBookPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const rooms = useAppSelector(s => s.rooms.rooms);
+  const navigate = useNavigate();
 
   const total = rooms.length;
   const occupied = rooms.filter(r => r.status === 'occupied').length;
@@ -40,6 +42,15 @@ const DashboardPage = () => {
       ))}
     </div>
   );
+
+  const handleBarClick = (data: any) => {
+    if (data && data.activePayload) {
+      const month = data.activePayload[0]?.payload?.name;
+      if (month) {
+        navigate(`/reports?month=${month}`);
+      }
+    }
+  };
 
   return (
     <div className="animate-slide-up">
@@ -120,20 +131,20 @@ const DashboardPage = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Monthly Finance */}
+        {/* Monthly Finance - Clickable */}
         <div className="glass-card rounded-2xl border border-border/50 p-5">
           <div className="mb-5">
             <h3 className="font-semibold">Monthly Spending & Profit</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Financial overview</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Click any month to view detailed report →</p>
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={monthlyFinance} barGap={4}>
+            <BarChart data={monthlyFinance} barGap={4} onClick={handleBarClick} style={{ cursor: 'pointer' }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,13%,91%)" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `₹${(v / 100000).toFixed(0)}L`} axisLine={false} tickLine={false} />
               <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} contentStyle={{ borderRadius: 12, border: '1px solid hsl(220,13%,91%)', boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }} />
-              <Bar dataKey="spending" fill="hsl(354,70%,54%)" radius={[8, 8, 0, 0]} name="Spending" />
-              <Bar dataKey="profit" fill="hsl(145,63%,42%)" radius={[8, 8, 0, 0]} name="Profit" />
+              <Bar dataKey="spending" fill="hsl(354,70%,54%)" radius={[8, 8, 0, 0]} name="Spending" className="cursor-pointer" />
+              <Bar dataKey="profit" fill="hsl(145,63%,42%)" radius={[8, 8, 0, 0]} name="Profit" className="cursor-pointer" />
               <Legend />
             </BarChart>
           </ResponsiveContainer>

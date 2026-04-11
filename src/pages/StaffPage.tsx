@@ -3,7 +3,7 @@ import { useAppSelector, useAppDispatch } from '@/store';
 import { markAttendance, selectStaff, clearSelectedStaff, assignTask, updateTaskStatus, addStaffMember, updateStaffFeatureAccess } from '@/store/staffSlice';
 import { StaffMember, Shift, WorkType, FeaturePage, ALL_FEATURE_PAGES } from '@/store/dummyData';
 import { toast } from 'sonner';
-import { ArrowLeft, CheckCircle, Plus, ClipboardList, X, Search, UserPlus, Shield } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Plus, ClipboardList, X, Search, UserPlus, Shield, MessageCircle, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -33,6 +33,8 @@ const StaffPage = () => {
   const [form, setForm] = useState(emptyForm);
   const [search, setSearch] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [broadcastMsg, setBroadcastMsg] = useState('');
 
   const validateForm = () => {
     const e: Record<string, string> = {};
@@ -81,11 +83,30 @@ const StaffPage = () => {
     !search || m.name.toLowerCase().includes(search.toLowerCase()) || m.role.toLowerCase().includes(search.toLowerCase())
   );
 
+  const openWhatsApp = (phone: string, name: string) => {
+    const cleaned = phone.replace(/\D/g, '');
+    const msg = encodeURIComponent(`Hi ${name}, this is a message from HotelDesk.`);
+    window.open(`https://wa.me/91${cleaned}?text=${msg}`, '_blank');
+  };
+
+  const handleBroadcast = () => {
+    if (!broadcastMsg.trim()) { toast.error('Enter a message'); return; }
+    toast.success(`Broadcast message prepared for ${members.length} staff members`);
+    setShowBroadcast(false);
+    setBroadcastMsg('');
+  };
+
   const StaffCard = ({ member, idx }: { member: StaffMember; idx: number }) => {
     const todayMarked = member.attendance.some(a => a.date === new Date().toISOString().split('T')[0]);
     const activeTasks = member.tasks.filter(t => t.status !== 'completed').length;
     return (
-      <div className="glass-card rounded-2xl border border-border/50 p-5 hover-lift animate-slide-up" style={{ animationDelay: `${idx * 40}ms` }}>
+      <div className="glass-card rounded-2xl border border-border/50 p-5 hover-lift animate-slide-up relative" style={{ animationDelay: `${idx * 40}ms` }}>
+        {/* WhatsApp Icon */}
+        <button onClick={(e) => { e.stopPropagation(); openWhatsApp(member.phone, member.name); }}
+          className="absolute bottom-4 left-4 w-8 h-8 rounded-full bg-[hsl(145,63%,42%)] flex items-center justify-center text-white hover:scale-110 transition-transform shadow-md z-10"
+          title={`Chat with ${member.name} on WhatsApp`}>
+          <MessageCircle className="w-4 h-4" />
+        </button>
         <div className="flex items-center gap-3 mb-4 cursor-pointer group" onClick={() => dispatch(selectStaff(member.id))}>
           <img src={member.image} alt={member.name} className="w-12 h-12 rounded-xl object-cover ring-2 ring-border/50 group-hover:ring-primary/30 transition-all" />
           <div className="flex-1 min-w-0">
@@ -166,6 +187,9 @@ const StaffPage = () => {
             <Search className="w-4 h-4 text-muted-foreground mr-2" />
             <input type="text" placeholder="Search staff..." className="bg-transparent outline-none text-sm w-40" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
+          <button onClick={() => setShowBroadcast(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/50 bg-[hsl(145,63%,42%)]/10 text-sm font-medium hover:bg-[hsl(145,63%,42%)]/20 transition-all">
+            <Send className="w-4 h-4 text-[hsl(145,63%,42%)]" /> Broadcast
+          </button>
           <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all btn-ripple shadow-md shadow-primary/20">
             <UserPlus className="w-4 h-4" /> Add Staff
           </button>
@@ -265,6 +289,30 @@ const StaffPage = () => {
             <div className="flex gap-3 mt-6">
               <button onClick={() => { setShowAddModal(false); setErrors({}); }} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all">Cancel</button>
               <button onClick={handleAddStaff} className="flex-1 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all btn-ripple shadow-md shadow-primary/20">Add Staff</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Broadcast Modal */}
+      {showBroadcast && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-scale-in" onClick={() => setShowBroadcast(false)}>
+          <div className="glass-card rounded-2xl border border-border/50 p-6 w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2"><Send className="w-5 h-5 text-[hsl(145,63%,42%)]" /> Broadcast Message</h2>
+              <button onClick={() => setShowBroadcast(false)} className="p-1.5 rounded-lg hover:bg-muted transition-all"><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Send a message to all {members.length} staff members via WhatsApp</p>
+            <textarea
+              value={broadcastMsg}
+              onChange={e => setBroadcastMsg(e.target.value)}
+              placeholder="Type your message here..."
+              rows={4}
+              className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all resize-none"
+            />
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setShowBroadcast(false)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all">Cancel</button>
+              <button onClick={handleBroadcast} className="flex-1 py-2.5 rounded-xl bg-[hsl(145,63%,42%)] text-white text-sm font-medium hover:opacity-90 transition-all btn-ripple shadow-md">Send to All</button>
             </div>
           </div>
         </div>
