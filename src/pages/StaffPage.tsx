@@ -3,7 +3,7 @@ import { useAppSelector, useAppDispatch } from '@/store';
 import { markAttendance, selectStaff, clearSelectedStaff, assignTask, updateTaskStatus, addStaffMember, updateStaffFeatureAccess } from '@/store/staffSlice';
 import { StaffMember, Shift, WorkType, FeaturePage, ALL_FEATURE_PAGES } from '@/store/dummyData';
 import { toast } from 'sonner';
-import { ArrowLeft, CheckCircle, Plus, ClipboardList, X, Search, UserPlus, Shield } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Plus, ClipboardList, X, Search, UserPlus, Shield, MessageCircle, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -33,6 +33,8 @@ const StaffPage = () => {
   const [form, setForm] = useState(emptyForm);
   const [search, setSearch] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [broadcastMsg, setBroadcastMsg] = useState('');
 
   const validateForm = () => {
     const e: Record<string, string> = {};
