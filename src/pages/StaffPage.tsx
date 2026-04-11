@@ -33,45 +33,14 @@ const StaffPage = () => {
   const [form, setForm] = useState(emptyForm);
   const [search, setSearch] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [broadcastMsg, setBroadcastMsg] = useState('');
 
   const validateForm = () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = 'Name is required';
     if (!form.phone.trim() || !/^\d{10}$/.test(form.phone)) e.phone = 'Valid 10-digit phone required';
-    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) e.email = 'Valid email required';
-    if (!form.age || parseInt(form.age) < 18 || parseInt(form.age) > 70) e.age = 'Age must be 18-70';
-    if (!form.role.trim()) e.role = 'Role is required';
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleAddStaff = () => {
-    if (!validateForm()) return;
-    const staffImages = [
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face',
-    ];
-    dispatch(addStaffMember({
-      id: `st-${Date.now()}`, name: form.name, role: form.role, isManager: false,
-      phone: form.phone, email: form.email, age: parseInt(form.age), gender: form.gender,
-      shift: form.shift, workType: form.workType,
-      image: staffImages[Math.floor(Math.random() * staffImages.length)],
-      salary: 25000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: false, tasks: [],
-      featureAccess: form.featureAccess,
-    }));
-    toast.success(`${form.name} added to staff`);
-    setForm(emptyForm);
-    setShowAddModal(false);
-    setErrors({});
-  };
-
-  const handleAssignTask = (staffId: string) => {
-    const room = rooms.find(r => r.id === assignRoom);
-    if (!room) { toast.error('Select a room'); return; }
-    dispatch(assignTask({ staffId, task: { id: `task-${Date.now()}`, roomId: room.id, roomNumber: room.number, type: assignType, status: 'assigned', assignedAt: new Date().toISOString() } }));
-    toast.success('Task assigned');
-    setShowAssign(null);
-    setAssignRoom('');
+...
   };
 
   if (selected) return <StaffProfile member={selected} onBack={() => dispatch(clearSelectedStaff())} dispatch={dispatch} />;
@@ -81,8 +50,6 @@ const StaffPage = () => {
     !search || m.name.toLowerCase().includes(search.toLowerCase()) || m.role.toLowerCase().includes(search.toLowerCase())
   );
 
-  const [showBroadcast, setShowBroadcast] = useState(false);
-  const [broadcastMsg, setBroadcastMsg] = useState('');
 
   const openWhatsApp = (phone: string, name: string) => {
     const cleaned = phone.replace(/\D/g, '');
