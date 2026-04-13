@@ -1,10 +1,11 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Hotel, SubscriptionPlan, HotelQuery, FeaturePage, dummyHotels, dummySubscriptionPlans, dummyHotelQueries } from './dummyData';
+import { Hotel, SubscriptionPlan, HotelQuery, FAQ, FeaturePage, dummyHotels, dummySubscriptionPlans, dummyHotelQueries, dummyFAQs } from './dummyData';
 
 interface HotelsState {
   hotels: Hotel[];
   plans: SubscriptionPlan[];
   queries: HotelQuery[];
+  faqs: FAQ[];
   selectedHotelId: string | null;
 }
 
@@ -12,6 +13,7 @@ const initialState: HotelsState = {
   hotels: dummyHotels,
   plans: dummySubscriptionPlans,
   queries: dummyHotelQueries,
+  faqs: dummyFAQs,
   selectedHotelId: null,
 };
 
@@ -57,7 +59,6 @@ const hotelsSlice = createSlice({
       const q = state.queries.find(q => q.id === action.payload.queryId);
       if (q) { q.response = action.payload.response; q.status = 'resolved'; }
     },
-    // Subscription plan management
     addPlan(state, action: PayloadAction<SubscriptionPlan>) {
       state.plans.push(action.payload);
     },
@@ -68,6 +69,19 @@ const hotelsSlice = createSlice({
     deletePlan(state, action: PayloadAction<string>) {
       state.plans = state.plans.filter(p => p.id !== action.payload);
     },
+    addFAQ(state, action: PayloadAction<FAQ>) {
+      state.faqs.push(action.payload);
+    },
+    updateFAQ(state, action: PayloadAction<Partial<FAQ> & { id: string }>) {
+      const idx = state.faqs.findIndex(f => f.id === action.payload.id);
+      if (idx !== -1) state.faqs[idx] = { ...state.faqs[idx], ...action.payload };
+    },
+    deleteFAQ(state, action: PayloadAction<string>) {
+      state.faqs = state.faqs.filter(f => f.id !== action.payload);
+    },
+    addQuery(state, action: PayloadAction<HotelQuery>) {
+      state.queries.push(action.payload);
+    },
   },
 });
 
@@ -75,5 +89,6 @@ export const {
   selectHotel, approveHotel, rejectHotel, addHotel, updateHotel,
   updateHotelFeatureAccess, updateHotelRoomLimit, toggleSubscription,
   resetHotelPassword, respondToQuery, addPlan, updatePlan, deletePlan,
+  addFAQ, updateFAQ, deleteFAQ, addQuery,
 } = hotelsSlice.actions;
 export default hotelsSlice.reducer;

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { revenueData, bookingData, monthlyFinance, revenueSourceData, housekeepingData } from '@/store/dummyData';
 import { useAppSelector } from '@/store';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, Area, AreaChart } from 'recharts';
-import { TrendingUp, TrendingDown, BedDouble, DollarSign, BarChart3, Activity } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { TrendingUp, TrendingDown, BedDouble, DollarSign, BarChart3, Activity, IdCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -25,6 +25,9 @@ const DashboardPage = () => {
   const totalRevenue = rooms.filter(r => r.currentBooking).reduce((s, r) => s + (r.currentBooking?.totalAmount || 0), 0);
   const adr = occupied > 0 ? Math.round(totalRevenue / occupied) : 0;
   const revPAR = total > 0 ? Math.round(totalRevenue / total) : 0;
+
+  // Auto-generated register ID
+  const registerId = 'REG-2025-HD001';
 
   const kpis = [
     { label: 'Occupancy Rate', value: `${occupancyRate}%`, sub: `${occupancyTrend >= 0 ? '+' : ''}${occupancyTrend}% vs last week`, trend: occupancyTrend >= 0, icon: BedDouble, gradient: 'from-blue-500/10 to-blue-600/5', iconColor: 'text-status-blue' },
@@ -54,9 +57,21 @@ const DashboardPage = () => {
 
   return (
     <div className="animate-slide-up">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Real-time hotel performance metrics</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Real-time hotel performance metrics</p>
+        </div>
+        {/* Register ID Card */}
+        <div className="glass-card rounded-2xl border border-primary/20 px-5 py-3 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <IdCard className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Register ID</p>
+            <p className="font-bold text-sm">{registerId}</p>
+          </div>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -79,7 +94,7 @@ const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
+        {/* Revenue Chart - Bar */}
         <div className="glass-card rounded-2xl border border-border/50 p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
@@ -89,23 +104,17 @@ const DashboardPage = () => {
             <PeriodTabs value={revPeriod} onChange={setRevPeriod} options={['daily', 'weekly', 'monthly', 'yearly']} />
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={revenueData[revPeriod]}>
-              <defs>
-                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(43,96%,56%)" stopOpacity={0.3}/>
-                  <stop offset="100%" stopColor="hsl(43,96%,56%)" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
+            <BarChart data={revenueData[revPeriod]}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,13%,91%)" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
               <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} contentStyle={{ borderRadius: 12, border: '1px solid hsl(220,13%,91%)', boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }} />
-              <Area type="monotone" dataKey="revenue" stroke="hsl(43,96%,56%)" strokeWidth={2.5} fill="url(#revGrad)" />
-            </AreaChart>
+              <Bar dataKey="revenue" fill="hsl(43,96%,56%)" radius={[8, 8, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Bookings Chart */}
+        {/* Bookings Chart - Bar */}
         <div className="glass-card rounded-2xl border border-border/50 p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
@@ -115,19 +124,13 @@ const DashboardPage = () => {
             <PeriodTabs value={bookPeriod} onChange={setBookPeriod} options={['daily', 'weekly', 'monthly']} />
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={bookingData[bookPeriod]}>
-              <defs>
-                <linearGradient id="bookGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(211,100%,50%)" stopOpacity={0.3}/>
-                  <stop offset="100%" stopColor="hsl(211,100%,50%)" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
+            <BarChart data={bookingData[bookPeriod]}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,13%,91%)" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(220,13%,91%)', boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }} />
-              <Area type="monotone" dataKey="bookings" stroke="hsl(211,100%,50%)" strokeWidth={2.5} fill="url(#bookGrad)" />
-            </AreaChart>
+              <Bar dataKey="bookings" fill="hsl(211,100%,50%)" radius={[8, 8, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
