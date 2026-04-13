@@ -103,7 +103,6 @@ const StaffPage = () => {
 
   const StaffCard = ({ member, idx }: { member: StaffMember; idx: number }) => {
     const todayMarked = member.attendance.some(a => a.date === new Date().toISOString().split('T')[0]);
-    const activeTasks = member.tasks.filter(t => t.status !== 'completed').length;
     return (
       <div className="glass-card rounded-2xl border border-border/50 p-5 hover-lift animate-slide-up relative" style={{ animationDelay: `${idx * 40}ms` }}>
         <button onClick={(e) => { e.stopPropagation(); openWhatsApp(member.phone, member.name); }}
@@ -117,11 +116,6 @@ const StaffPage = () => {
             <p className="font-semibold text-sm truncate">{member.name}</p>
             <p className="text-xs text-muted-foreground">{member.role}</p>
           </div>
-          {activeTasks > 0 && (
-            <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-status-blue/10 text-status-blue text-xs font-medium">
-              <ClipboardList className="w-3 h-3" />{activeTasks}
-            </span>
-          )}
         </div>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -139,35 +133,6 @@ const StaffPage = () => {
             )}
           </div>
         </div>
-        {showAssign === member.id && (
-          <div className="mt-3 p-3 bg-muted/40 rounded-xl animate-scale-in">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold">Assign Task</p>
-              <button onClick={() => setShowAssign(null)} className="p-0.5"><X className="w-3 h-3" /></button>
-            </div>
-            <div className="flex gap-2 mb-2">
-              <select value={assignRoom} onChange={e => setAssignRoom(e.target.value)} className="flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs">
-                <option value="">Room</option>{rooms.map(r => <option key={r.id} value={r.id}>Room {r.number}</option>)}
-              </select>
-              <select value={assignType} onChange={e => setAssignType(e.target.value as any)} className="rounded-lg border border-input bg-background px-2 py-1.5 text-xs">
-                <option value="cleaning">Cleaning</option><option value="maintenance">Maintenance</option><option value="service">Service</option>
-              </select>
-            </div>
-            <button onClick={() => handleAssignTask(member.id)} className="w-full py-1.5 rounded-lg gradient-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all btn-ripple">Assign</button>
-          </div>
-        )}
-        {member.tasks.filter(t => t.status !== 'completed').length > 0 && (
-          <div className="mt-3 space-y-1.5">
-            {member.tasks.filter(t => t.status !== 'completed').map(task => (
-              <div key={task.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg text-xs">
-                <span>Room {task.roomNumber} - {task.type}</span>
-                {task.status === 'assigned' && (
-                  <button onClick={(e) => { e.stopPropagation(); dispatch(updateTaskStatus({ staffId: member.id, taskId: task.id, status: 'completed' })); toast.success('Task completed'); }} className="text-status-available font-semibold hover:underline">Done</button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     );
   };
@@ -215,6 +180,10 @@ const StaffPage = () => {
               <button onClick={() => { setShowAddModal(false); setErrors({}); }} className="p-1.5 rounded-lg hover:bg-muted transition-all"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1.5">Profile Image URL</label>
+                <input placeholder="https://... (optional)" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm" />
+              </div>
               <div>
                 <label className="block text-xs font-semibold mb-1.5">Name *</label>
                 <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm" />
@@ -322,30 +291,38 @@ const StaffProfile = ({ member, onBack, dispatch }: { member: StaffMember; onBac
   };
 
   const downloadProfile = () => {
-    const content = `
-STAFF PROFILE
-=============
-Name: ${member.name}
-Role: ${member.role}
-Phone: ${member.phone}${member.altPhone ? `\nAlt Phone: ${member.altPhone}` : ''}
-Email: ${member.email}
-Age: ${member.age}
-Gender: ${member.gender}${member.aadhaarNumber ? `\nAadhaar: ${member.aadhaarNumber}` : ''}
-Shift: ${member.shift}
-Work Type: ${member.workType}
-Per Day Salary: ₹${member.perDaySalary}
-Monthly Salary: ₹${member.salary.toLocaleString()}
-Leaves: ${member.leaves}
-Half Days: ${member.halfDays}
-    `.trim();
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${member.name.replace(/\s+/g, '_')}_profile.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Profile downloaded');
+    const w = window.open('', '_blank');
+    if (!w) { toast.error('Please allow popups'); return; }
+    w.document.write(`<!DOCTYPE html><html><head><title>${member.name} - Profile</title><style>
+      body{font-family:Arial,sans-serif;max-width:600px;margin:40px auto;padding:20px;color:#1a1a1a}
+      h1{font-size:24px;margin-bottom:4px}h2{color:#666;font-size:14px;font-weight:normal;margin-top:0}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+      .field{background:#f5f5f5;border-radius:8px;padding:12px}
+      .field label{font-size:10px;text-transform:uppercase;color:#888;letter-spacing:1px}
+      .field p{font-size:14px;font-weight:600;margin:4px 0 0}
+      .header{display:flex;align-items:center;gap:20px;margin-bottom:24px;padding-bottom:24px;border-bottom:2px solid #eee}
+      img{width:80px;height:80px;border-radius:12px;object-fit:cover}
+      @media print{body{margin:0;padding:20px}}
+    </style></head><body>
+      <div class="header">
+        <img src="${member.image}" alt="${member.name}" />
+        <div><h1>${member.name}</h1><h2>${member.role} · ${member.shift} shift · ${member.workType}</h2></div>
+      </div>
+      <div class="grid">
+        <div class="field"><label>Phone</label><p>${member.phone}</p></div>
+        ${member.altPhone ? `<div class="field"><label>Alt Phone</label><p>${member.altPhone}</p></div>` : ''}
+        <div class="field"><label>Email</label><p>${member.email}</p></div>
+        <div class="field"><label>Age / Gender</label><p>${member.age} / ${member.gender}</p></div>
+        ${member.aadhaarNumber ? `<div class="field"><label>Aadhaar</label><p>${member.aadhaarNumber}</p></div>` : ''}
+        <div class="field"><label>Per Day Salary</label><p>₹${member.perDaySalary}</p></div>
+        <div class="field"><label>Monthly Salary</label><p>₹${member.salary.toLocaleString()}</p></div>
+        <div class="field"><label>Leaves</label><p>${member.leaves}</p></div>
+        <div class="field"><label>Half Days</label><p>${member.halfDays}</p></div>
+      </div>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => { w.print(); }, 500);
+    toast.success('Print dialog opened — save as PDF');
   };
 
   return (

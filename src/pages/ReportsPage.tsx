@@ -170,8 +170,53 @@ const ReportsPage = () => {
 
         {/* Export Buttons */}
         <div className="flex gap-3 mt-6">
-          <button onClick={() => toast.info('Excel export coming soon')} className="px-5 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all flex items-center gap-2"><Download className="w-4 h-4" /> Export Excel</button>
-          <button onClick={() => toast.info('PDF export coming soon')} className="px-5 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all btn-ripple flex items-center gap-2"><Download className="w-4 h-4" /> Export PDF</button>
+          <button onClick={() => {
+            const rows = [['Date','Type','Category','Amount','Description']];
+            report.transactions?.forEach(t => rows.push([t.date, t.type, t.category, String(t.amount), t.description]));
+            if (!report.transactions?.length) {
+              spendingData.forEach(s => rows.push([selectedMonth, 'spending', s.name, String(s.value), `${s.name} expenses`]));
+              profitData.forEach(p => rows.push([selectedMonth, 'profit', p.name, String(p.value), `${p.name} income`]));
+            }
+            const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `report_${selectedMonth}.csv`; a.click();
+            URL.revokeObjectURL(url);
+            toast.success('Excel/CSV exported');
+          }} className="px-5 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all flex items-center gap-2"><Download className="w-4 h-4" /> Export Excel</button>
+          <button onClick={() => {
+            const w = window.open('', '_blank');
+            if (!w) { toast.error('Allow popups'); return; }
+            const spendRows = spendingData.map(s => `<tr><td>${s.name}</td><td style="text-align:right;color:#d32f2f">₹${s.value.toLocaleString()}</td></tr>`).join('');
+            const profitRows = profitData.map(p => `<tr><td>${p.name}</td><td style="text-align:right;color:#2e7d32">₹${p.value.toLocaleString()}</td></tr>`).join('');
+            w.document.write(`<!DOCTYPE html><html><head><title>Report ${selectedMonth}</title><style>
+              body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px;color:#1a1a1a}
+              h1{font-size:22px}h2{font-size:16px;margin-top:24px}
+              table{width:100%;border-collapse:collapse;margin:12px 0}
+              td,th{padding:10px 12px;border-bottom:1px solid #eee;font-size:13px}
+              th{text-align:left;color:#888;font-size:11px;text-transform:uppercase}
+              .summary{display:flex;gap:20px;margin:20px 0}
+              .summary div{flex:1;background:#f5f5f5;border-radius:8px;padding:16px}
+              @media print{body{margin:0;padding:20px}}
+            </style></head><body>
+              <h1>${selectedMonth} Monthly Report</h1>
+              <div class="summary">
+                <div><small>Total Spending</small><h2 style="color:#d32f2f;margin:4px 0">₹${report.spending.total.toLocaleString()}</h2></div>
+                <div><small>Total Profit</small><h2 style="color:#2e7d32;margin:4px 0">₹${report.profit.total.toLocaleString()}</h2></div>
+                <div><small>Net</small><h2 style="color:#1565c0;margin:4px 0">₹${(report.profit.total - report.spending.total).toLocaleString()}</h2></div>
+              </div>
+              <h2>💸 Spending Breakdown</h2>
+              <table><thead><tr><th>Category</th><th style="text-align:right">Amount</th></tr></thead><tbody>${spendRows}
+              <tr style="font-weight:bold;border-top:2px solid #333"><td>Total</td><td style="text-align:right">₹${report.spending.total.toLocaleString()}</td></tr></tbody></table>
+              <h2>📈 Profit Breakdown</h2>
+              <table><thead><tr><th>Category</th><th style="text-align:right">Amount</th></tr></thead><tbody>${profitRows}
+              <tr style="font-weight:bold;border-top:2px solid #333"><td>Total</td><td style="text-align:right">₹${report.profit.total.toLocaleString()}</td></tr></tbody></table>
+            </body></html>`);
+            w.document.close();
+            setTimeout(() => w.print(), 500);
+            toast.success('Print dialog opened — save as PDF');
+          }} className="px-5 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all btn-ripple flex items-center gap-2"><Download className="w-4 h-4" /> Export PDF</button>
         </div>
       </div>
     );
@@ -214,8 +259,8 @@ const ReportsPage = () => {
             <h3 className="font-semibold mb-1">{r.title}</h3>
             <p className="text-xs text-muted-foreground mb-4">{r.desc}</p>
             <div className="flex gap-2">
-              <button onClick={() => toast.info('Excel export coming soon')} className="px-4 py-2 rounded-xl border border-border text-xs font-medium hover:bg-muted transition-all flex items-center gap-1"><Download className="w-3 h-3" /> Excel</button>
-              <button onClick={() => toast.info('PDF export coming soon')} className="px-4 py-2 rounded-xl gradient-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all btn-ripple flex items-center gap-1"><Download className="w-3 h-3" /> PDF</button>
+              <button onClick={() => toast.info('Select a month report for detailed export')} className="px-4 py-2 rounded-xl border border-border text-xs font-medium hover:bg-muted transition-all flex items-center gap-1"><Download className="w-3 h-3" /> Excel</button>
+              <button onClick={() => toast.info('Select a month report for detailed export')} className="px-4 py-2 rounded-xl gradient-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all btn-ripple flex items-center gap-1"><Download className="w-3 h-3" /> PDF</button>
             </div>
           </div>
         ))}
