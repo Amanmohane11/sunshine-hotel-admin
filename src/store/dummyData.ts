@@ -6,6 +6,7 @@ export interface Guest {
   phone: string;
   address: string;
   aadhaarUrl?: string;
+  aadhaarNumber?: string;
   email: string;
   age: number;
   gender: 'Male' | 'Female' | 'Other';
@@ -31,14 +32,21 @@ export interface Booking {
   roomCharges: number;
   serviceCharges: number;
   tax: number;
+  gstPercent: number;
   totalAmount: number;
   amountPaid: number;
   paymentMethod?: 'cash' | 'upi' | 'card';
   paymentStatus: 'pending' | 'partial' | 'paid';
 }
 
-export type RoomStatus = 'available' | 'occupied' | 'cleaning' | 'reserved';
+export type RoomStatus = 'available' | 'occupied' | 'cleaning';
 export type RoomType = 'couple' | 'multiple';
+
+export interface RoomCategory {
+  id: string;
+  name: string;
+  description?: string;
+}
 
 export interface DynamicPricing {
   weekendMultiplier: number;
@@ -53,6 +61,8 @@ export interface Room {
   price: number;
   floor: number;
   image: string;
+  category: string;
+  capacity: number;
   currentBooking?: Booking;
   dynamicPricing: DynamicPricing;
 }
@@ -66,6 +76,8 @@ export interface ServiceOrder {
   amount: number;
   status: 'pending' | 'in_progress' | 'completed';
   createdAt: string;
+  assignedStaffId?: string;
+  assignedStaffName?: string;
 }
 
 export type Shift = 'morning' | 'afternoon' | 'night';
@@ -102,12 +114,15 @@ export interface StaffMember {
   role: string;
   isManager: boolean;
   phone: string;
+  altPhone?: string;
   email: string;
   age: number;
   gender: 'Male' | 'Female' | 'Other';
   shift: Shift;
   workType: WorkType;
   image: string;
+  aadhaarNumber?: string;
+  perDaySalary: number;
   salary: number;
   attendance: { date: string; status: 'present' | 'half_day' | 'absent' }[];
   leaves: number;
@@ -119,7 +134,7 @@ export interface StaffMember {
 
 export interface Notification {
   id: string;
-  type: 'checkout' | 'booking' | 'cleaning' | 'payment' | 'low_stock' | 'general';
+  type: 'checkout' | 'booking' | 'cleaning' | 'payment' | 'low_stock' | 'general' | 'query_response';
   title: string;
   message: string;
   read: boolean;
@@ -201,10 +216,15 @@ export interface Hotel {
   owner: string;
   email: string;
   phone: string;
-  status: 'active' | 'inactive' | 'pending';
+  altPhone?: string;
+  registerId: string;
+  pagesPassword?: string;
+  gstNumber?: string;
+  trialDays?: number;
+  status: 'active' | 'inactive' | 'trial';
   rooms: number;
   roomLimit: number;
-  subscription: string; // plan id
+  subscription: string;
   subscriptionStart: string;
   subscriptionEnd: string;
   revenue: number;
@@ -237,6 +257,13 @@ export interface HotelQuery {
   response?: string;
 }
 
+export interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  createdAt: string;
+}
+
 export interface AuditLog {
   id: string;
   action: string;
@@ -244,6 +271,15 @@ export interface AuditLog {
   details: string;
   user: string;
   timestamp: string;
+}
+
+export interface TransactionEntry {
+  id: string;
+  date: string;
+  amount: number;
+  type: 'spending' | 'profit';
+  category: string;
+  description: string;
 }
 
 // ---------- Dummy Data ----------
@@ -257,9 +293,18 @@ const roomImages = [
   'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=400&h=300&fit=crop',
 ];
 
+export const dummyRoomCategories: RoomCategory[] = [
+  { id: 'rcat-1', name: 'Deluxe', description: 'Spacious rooms with premium amenities' },
+  { id: 'rcat-2', name: 'Standard', description: 'Comfortable rooms at affordable prices' },
+  { id: 'rcat-3', name: 'Suite', description: 'Luxury suites with separate living area' },
+  { id: 'rcat-4', name: 'Economy', description: 'Budget-friendly rooms' },
+];
+
+const categoryNames = ['Deluxe', 'Standard', 'Suite', 'Economy'];
+
 export const dummyRooms: Room[] = Array.from({ length: 24 }, (_, i) => {
-  const statuses: RoomStatus[] = ['available', 'occupied', 'cleaning', 'reserved'];
-  const status = statuses[i % 4];
+  const statuses: RoomStatus[] = ['available', 'occupied', 'cleaning'];
+  const status = statuses[i % 3];
   const room: Room = {
     id: `room-${i + 1}`,
     number: `${Math.floor(i / 6) + 1}${String((i % 6) + 1).padStart(2, '0')}`,
@@ -268,27 +313,19 @@ export const dummyRooms: Room[] = Array.from({ length: 24 }, (_, i) => {
     price: 2000 + Math.floor(Math.random() * 5000),
     floor: Math.floor(i / 6) + 1,
     image: roomImages[i % roomImages.length],
+    category: categoryNames[i % 4],
+    capacity: i % 3 === 0 ? 2 : 4,
     dynamicPricing: { weekendMultiplier: 1.3, holidayMultiplier: 1.5 },
   };
   if (status === 'occupied') {
     room.currentBooking = {
       id: `bk-${i}`, roomId: room.id,
-      guests: [{ id: `g-${i}-1`, name: `Guest ${i + 1}`, phone: '9876543210', address: '123 Street', email: `guest${i}@email.com`, age: 30, gender: 'Male' }],
+      guests: [{ id: `g-${i}-1`, name: `Guest ${i + 1}`, phone: '9876543210', address: '123 Street', email: `guest${i}@email.com`, age: 30, gender: 'Male', aadhaarNumber: '1234-5678-9012' }],
       checkIn: new Date(Date.now() - 3600000 * 2).toISOString(),
       checkOut: new Date(Date.now() + 3600000 * 22).toISOString(),
       status: 'active', createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
       services: [{ id: `bs-${i}-1`, name: 'Room Service', price: 500, quantity: 1, type: 'room_service' }],
-      roomCharges: 3500, serviceCharges: 500, tax: 720, totalAmount: 4720, amountPaid: 3500, paymentMethod: 'upi', paymentStatus: 'partial',
-    };
-  }
-  if (status === 'reserved') {
-    room.currentBooking = {
-      id: `bk-res-${i}`, roomId: room.id,
-      guests: [{ id: `g-res-${i}`, name: `Future Guest ${i + 1}`, phone: '9876543299', address: '456 Avenue', email: `future${i}@email.com`, age: 28, gender: 'Female' }],
-      checkIn: new Date(Date.now() + 3600000 * 24).toISOString(),
-      checkOut: new Date(Date.now() + 3600000 * 48).toISOString(),
-      status: 'active', createdAt: new Date().toISOString(), services: [],
-      roomCharges: 4000, serviceCharges: 0, tax: 720, totalAmount: 4720, amountPaid: 0, paymentStatus: 'pending',
+      roomCharges: 3500, serviceCharges: 500, tax: 720, gstPercent: 18, totalAmount: 4720, amountPaid: 3500, paymentMethod: 'upi', paymentStatus: 'partial',
     };
   }
   return room;
@@ -318,14 +355,14 @@ const staffImages = [
 const allFeatures: FeaturePage[] = ['home', 'dashboard', 'staff', 'rooms', 'services', 'inventory', 'customers', 'reports', 'history', 'hr_payroll'];
 
 export const dummyStaff: StaffMember[] = [
-  { id: 'st1', name: 'Rajesh Kumar', role: 'General Manager', isManager: true, phone: '9876543210', email: 'rajesh@hotel.com', age: 42, gender: 'Male', shift: 'morning', workType: 'full-time', image: staffImages[0], salary: 80000, attendance: [], leaves: 1, halfDays: 0, salaryPaid: false, tasks: [], featureAccess: allFeatures },
-  { id: 'st2', name: 'Priya Sharma', role: 'Front Desk Manager', isManager: true, phone: '9876543211', email: 'priya@hotel.com', age: 35, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[1], salary: 55000, attendance: [], leaves: 0, halfDays: 1, salaryPaid: false, tasks: [], featureAccess: ['home', 'dashboard', 'rooms', 'customers', 'reports', 'history', 'services'] },
-  { id: 'st3', name: 'Amit Patel', role: 'Housekeeping Manager', isManager: true, phone: '9876543212', email: 'amit@hotel.com', age: 38, gender: 'Male', shift: 'afternoon', workType: 'full-time', image: staffImages[2], salary: 50000, attendance: [], leaves: 2, halfDays: 0, salaryPaid: true, tasks: [], featureAccess: ['home', 'rooms', 'inventory'] },
-  { id: 'st4', name: 'Sneha Reddy', role: 'Receptionist', isManager: false, phone: '9876543213', email: 'sneha@hotel.com', age: 26, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[3], salary: 25000, attendance: [], leaves: 3, halfDays: 2, salaryPaid: false, tasks: [{ id: 'task-1', roomId: 'room-3', roomNumber: '103', type: 'cleaning', status: 'assigned', assignedAt: new Date().toISOString() }], featureAccess: ['home', 'rooms'] },
-  { id: 'st5', name: 'Vikram Singh', role: 'Housekeeping Staff', isManager: false, phone: '9876543214', email: 'vikram@hotel.com', age: 30, gender: 'Male', shift: 'afternoon', workType: 'full-time', image: staffImages[4], salary: 20000, attendance: [], leaves: 1, halfDays: 1, salaryPaid: false, tasks: [{ id: 'task-2', roomId: 'room-9', roomNumber: '303', type: 'cleaning', status: 'in_progress', assignedAt: new Date().toISOString() }], featureAccess: ['rooms'] },
-  { id: 'st6', name: 'Meera Nair', role: 'Room Service', isManager: false, phone: '9876543215', email: 'meera@hotel.com', age: 28, gender: 'Female', shift: 'night', workType: 'part-time', image: staffImages[5], salary: 22000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: true, tasks: [], featureAccess: ['home', 'rooms', 'services'] },
-  { id: 'st7', name: 'Arjun Das', role: 'Security', isManager: false, phone: '9876543216', email: 'arjun@hotel.com', age: 33, gender: 'Male', shift: 'night', workType: 'full-time', image: staffImages[0], salary: 18000, attendance: [], leaves: 2, halfDays: 1, salaryPaid: false, tasks: [], featureAccess: ['home'] },
-  { id: 'st8', name: 'Kavitha Iyer', role: 'Chef', isManager: false, phone: '9876543217', email: 'kavitha@hotel.com', age: 31, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[1], salary: 35000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: false, tasks: [], featureAccess: ['home', 'services', 'inventory'] },
+  { id: 'st1', name: 'Rajesh Kumar', role: 'General Manager', isManager: true, phone: '9876543210', altPhone: '9876543220', email: 'rajesh@hotel.com', age: 42, gender: 'Male', shift: 'morning', workType: 'full-time', image: staffImages[0], aadhaarNumber: '1234-5678-9001', perDaySalary: 2667, salary: 80000, attendance: [], leaves: 1, halfDays: 0, salaryPaid: false, tasks: [], featureAccess: allFeatures },
+  { id: 'st2', name: 'Priya Sharma', role: 'Front Desk Manager', isManager: true, phone: '9876543211', email: 'priya@hotel.com', age: 35, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[1], aadhaarNumber: '1234-5678-9002', perDaySalary: 1833, salary: 55000, attendance: [], leaves: 0, halfDays: 1, salaryPaid: false, tasks: [], featureAccess: ['home', 'dashboard', 'rooms', 'customers', 'reports', 'history', 'services'] },
+  { id: 'st3', name: 'Amit Patel', role: 'Housekeeping Manager', isManager: true, phone: '9876543212', email: 'amit@hotel.com', age: 38, gender: 'Male', shift: 'afternoon', workType: 'full-time', image: staffImages[2], aadhaarNumber: '1234-5678-9003', perDaySalary: 1667, salary: 50000, attendance: [], leaves: 2, halfDays: 0, salaryPaid: true, tasks: [], featureAccess: ['home', 'rooms', 'inventory'] },
+  { id: 'st4', name: 'Sneha Reddy', role: 'Receptionist', isManager: false, phone: '9876543213', email: 'sneha@hotel.com', age: 26, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[3], aadhaarNumber: '1234-5678-9004', perDaySalary: 833, salary: 25000, attendance: [], leaves: 3, halfDays: 2, salaryPaid: false, tasks: [{ id: 'task-1', roomId: 'room-3', roomNumber: '103', type: 'cleaning', status: 'assigned', assignedAt: new Date().toISOString() }], featureAccess: ['home', 'rooms'] },
+  { id: 'st5', name: 'Vikram Singh', role: 'Housekeeping Staff', isManager: false, phone: '9876543214', email: 'vikram@hotel.com', age: 30, gender: 'Male', shift: 'afternoon', workType: 'full-time', image: staffImages[4], aadhaarNumber: '1234-5678-9005', perDaySalary: 667, salary: 20000, attendance: [], leaves: 1, halfDays: 1, salaryPaid: false, tasks: [{ id: 'task-2', roomId: 'room-9', roomNumber: '303', type: 'cleaning', status: 'in_progress', assignedAt: new Date().toISOString() }], featureAccess: ['rooms'] },
+  { id: 'st6', name: 'Meera Nair', role: 'Room Service', isManager: false, phone: '9876543215', email: 'meera@hotel.com', age: 28, gender: 'Female', shift: 'night', workType: 'part-time', image: staffImages[5], aadhaarNumber: '1234-5678-9006', perDaySalary: 733, salary: 22000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: true, tasks: [], featureAccess: ['home', 'rooms', 'services'] },
+  { id: 'st7', name: 'Arjun Das', role: 'Security', isManager: false, phone: '9876543216', email: 'arjun@hotel.com', age: 33, gender: 'Male', shift: 'night', workType: 'full-time', image: staffImages[0], aadhaarNumber: '1234-5678-9007', perDaySalary: 600, salary: 18000, attendance: [], leaves: 2, halfDays: 1, salaryPaid: false, tasks: [], featureAccess: ['home'] },
+  { id: 'st8', name: 'Kavitha Iyer', role: 'Chef', isManager: false, phone: '9876543217', email: 'kavitha@hotel.com', age: 31, gender: 'Female', shift: 'morning', workType: 'full-time', image: staffImages[1], aadhaarNumber: '1234-5678-9008', perDaySalary: 1167, salary: 35000, attendance: [], leaves: 0, halfDays: 0, salaryPaid: false, tasks: [], featureAccess: ['home', 'services', 'inventory'] },
 ];
 
 export const dummyNotifications: Notification[] = [
@@ -390,16 +427,23 @@ const hotelImages = [
 ];
 
 export const dummyHotels: Hotel[] = [
-  { id: 'h-1', name: 'Grand Palace Hotel', location: 'Mumbai', owner: 'Sanjay Kapoor', email: 'sanjay@grandpalace.com', phone: '9876500001', status: 'active', rooms: 50, roomLimit: 60, subscription: 'plan-3', subscriptionStart: new Date(Date.now() - 86400000 * 300).toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 65).toISOString(), revenue: 5200000, createdAt: new Date(Date.now() - 86400000 * 365).toISOString(), image: hotelImages[0], adminId: 'grandpalace_admin', adminPassword: 'hotel123', featureAccess: allFeatures, subscriptionActive: true },
-  { id: 'h-2', name: 'Sea View Resort', location: 'Goa', owner: 'Maria Fernandes', email: 'maria@seaview.com', phone: '9876500002', status: 'active', rooms: 30, roomLimit: 40, subscription: 'plan-2', subscriptionStart: new Date(Date.now() - 86400000 * 20).toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 10).toISOString(), revenue: 2800000, createdAt: new Date(Date.now() - 86400000 * 180).toISOString(), image: hotelImages[1], adminId: 'seaview_admin', adminPassword: 'hotel123', featureAccess: ['home', 'dashboard', 'rooms', 'staff', 'hr_payroll'], subscriptionActive: true },
-  { id: 'h-3', name: 'Mountain Lodge', location: 'Shimla', owner: 'Ravi Thakur', email: 'ravi@mountainlodge.com', phone: '9876500003', status: 'inactive', rooms: 20, roomLimit: 25, subscription: 'plan-1', subscriptionStart: new Date(Date.now() - 86400000 * 60).toISOString(), subscriptionEnd: new Date(Date.now() - 86400000 * 30).toISOString(), revenue: 900000, createdAt: new Date(Date.now() - 86400000 * 90).toISOString(), image: hotelImages[2], adminId: 'mountain_admin', adminPassword: 'hotel123', featureAccess: ['home', 'dashboard', 'rooms'], subscriptionActive: false },
-  { id: 'h-4', name: 'City Business Hotel', location: 'Delhi', owner: 'Neha Agarwal', email: 'neha@citybusiness.com', phone: '9876500004', status: 'pending', rooms: 40, roomLimit: 50, subscription: 'plan-2', subscriptionStart: '', subscriptionEnd: '', revenue: 0, createdAt: new Date().toISOString(), image: hotelImages[3], adminId: 'citybusiness_admin', adminPassword: 'hotel123', featureAccess: [], subscriptionActive: false },
+  { id: 'h-1', name: 'Grand Palace Hotel', location: 'Mumbai', owner: 'Sanjay Kapoor', email: 'sanjay@grandpalace.com', phone: '9876500001', registerId: 'REG-2024-001', pagesPassword: '1234', status: 'active', rooms: 50, roomLimit: 60, subscription: 'plan-3', subscriptionStart: new Date(Date.now() - 86400000 * 300).toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 65).toISOString(), revenue: 5200000, createdAt: new Date(Date.now() - 86400000 * 365).toISOString(), image: hotelImages[0], adminId: 'grandpalace_admin', adminPassword: 'hotel123', featureAccess: allFeatures, subscriptionActive: true },
+  { id: 'h-2', name: 'Sea View Resort', location: 'Goa', owner: 'Maria Fernandes', email: 'maria@seaview.com', phone: '9876500002', registerId: 'REG-2024-002', pagesPassword: '5678', status: 'active', rooms: 30, roomLimit: 40, subscription: 'plan-2', subscriptionStart: new Date(Date.now() - 86400000 * 20).toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 10).toISOString(), revenue: 2800000, createdAt: new Date(Date.now() - 86400000 * 180).toISOString(), image: hotelImages[1], adminId: 'seaview_admin', adminPassword: 'hotel123', featureAccess: ['home', 'dashboard', 'rooms', 'staff', 'hr_payroll'], subscriptionActive: true },
+  { id: 'h-3', name: 'Mountain Lodge', location: 'Shimla', owner: 'Ravi Thakur', email: 'ravi@mountainlodge.com', phone: '9876500003', registerId: 'REG-2024-003', status: 'inactive', rooms: 20, roomLimit: 25, subscription: 'plan-1', subscriptionStart: new Date(Date.now() - 86400000 * 60).toISOString(), subscriptionEnd: new Date(Date.now() - 86400000 * 30).toISOString(), revenue: 900000, createdAt: new Date(Date.now() - 86400000 * 90).toISOString(), image: hotelImages[2], adminId: 'mountain_admin', adminPassword: 'hotel123', featureAccess: ['home', 'dashboard', 'rooms'], subscriptionActive: false },
+  { id: 'h-4', name: 'City Business Hotel', location: 'Delhi', owner: 'Neha Agarwal', email: 'neha@citybusiness.com', phone: '9876500004', registerId: 'REG-2024-004', trialDays: 14, status: 'trial', rooms: 40, roomLimit: 50, subscription: 'plan-2', subscriptionStart: new Date().toISOString(), subscriptionEnd: new Date(Date.now() + 86400000 * 14).toISOString(), revenue: 0, createdAt: new Date().toISOString(), image: hotelImages[3], adminId: 'citybusiness_admin', adminPassword: 'hotel123', featureAccess: allFeatures, subscriptionActive: true },
 ];
 
 export const dummyHotelQueries: HotelQuery[] = [
   { id: 'q-1', hotelId: 'h-1', hotelName: 'Grand Palace Hotel', subject: 'Payment gateway issue', message: 'We are facing issues with UPI payments not reflecting in our dashboard.', status: 'open', createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
   { id: 'q-2', hotelId: 'h-2', hotelName: 'Sea View Resort', subject: 'Feature request - Spa module', message: 'Can you add a dedicated spa booking module to our system?', status: 'open', createdAt: new Date(Date.now() - 86400000 * 1).toISOString() },
   { id: 'q-3', hotelId: 'h-1', hotelName: 'Grand Palace Hotel', subject: 'Report export not working', message: 'Excel export in the reports section is showing blank files.', status: 'resolved', createdAt: new Date(Date.now() - 86400000 * 10).toISOString(), response: 'Fixed in the latest update. Please refresh your browser cache.' },
+];
+
+export const dummyFAQs: FAQ[] = [
+  { id: 'faq-1', question: 'How to book a room?', answer: 'Go to Rooms → Click on an available room → Fill guest details → Add services → Make payment → Book.', createdAt: new Date().toISOString() },
+  { id: 'faq-2', question: 'How to process checkout?', answer: 'Go to Rooms → Click occupied room → Complete full payment → Click Checkout button.', createdAt: new Date().toISOString() },
+  { id: 'faq-3', question: 'How to add inventory?', answer: 'Go to Inventory → Click Add Item → Fill product details → Save.', createdAt: new Date().toISOString() },
+  { id: 'faq-4', question: 'How to mark staff attendance?', answer: 'Go to Staff → Click "Mark Attendance" on any staff card, or view profile for half-day option.', createdAt: new Date().toISOString() },
 ];
 
 export const dummySubscriptionPlans: SubscriptionPlan[] = [
@@ -479,13 +523,42 @@ export interface MonthlyReport {
     services: number;
     otherIncome: number;
   };
+  transactions: TransactionEntry[];
 }
 
 export const monthlyReports: MonthlyReport[] = [
-  { month: 'Jan', spending: { total: 800000, inventory: 250000, staffSalaries: 320000, maintenance: 80000, utilities: 100000, other: 50000 }, profit: { total: 400000, roomBookings: 280000, services: 80000, otherIncome: 40000 } },
-  { month: 'Feb', spending: { total: 750000, inventory: 220000, staffSalaries: 320000, maintenance: 60000, utilities: 95000, other: 55000 }, profit: { total: 350000, roomBookings: 240000, services: 70000, otherIncome: 40000 } },
-  { month: 'Mar', spending: { total: 900000, inventory: 300000, staffSalaries: 320000, maintenance: 100000, utilities: 110000, other: 70000 }, profit: { total: 500000, roomBookings: 350000, services: 100000, otherIncome: 50000 } },
-  { month: 'Apr', spending: { total: 850000, inventory: 280000, staffSalaries: 320000, maintenance: 90000, utilities: 105000, other: 55000 }, profit: { total: 450000, roomBookings: 310000, services: 90000, otherIncome: 50000 } },
-  { month: 'May', spending: { total: 950000, inventory: 320000, staffSalaries: 330000, maintenance: 110000, utilities: 120000, other: 70000 }, profit: { total: 550000, roomBookings: 380000, services: 110000, otherIncome: 60000 } },
-  { month: 'Jun', spending: { total: 1000000, inventory: 350000, staffSalaries: 330000, maintenance: 120000, utilities: 125000, other: 75000 }, profit: { total: 600000, roomBookings: 420000, services: 120000, otherIncome: 60000 } },
+  { month: 'Jan', spending: { total: 800000, inventory: 250000, staffSalaries: 320000, maintenance: 80000, utilities: 100000, other: 50000 }, profit: { total: 400000, roomBookings: 280000, services: 80000, otherIncome: 40000 }, transactions: [
+    { id: 'tx-j1', date: '2025-01-03', amount: 45000, type: 'spending', category: 'Inventory', description: 'Linen purchase from supplier' },
+    { id: 'tx-j2', date: '2025-01-05', amount: 28000, type: 'profit', category: 'Room Bookings', description: 'Room 101-105 bookings' },
+    { id: 'tx-j3', date: '2025-01-08', amount: 80000, type: 'spending', category: 'Staff Salaries', description: 'Weekly salary disbursement' },
+    { id: 'tx-j4', date: '2025-01-10', amount: 15000, type: 'profit', category: 'Services', description: 'Spa & food services' },
+    { id: 'tx-j5', date: '2025-01-15', amount: 25000, type: 'spending', category: 'Maintenance', description: 'AC repair & plumbing' },
+    { id: 'tx-j6', date: '2025-01-20', amount: 35000, type: 'profit', category: 'Room Bookings', description: 'Weekend rush bookings' },
+    { id: 'tx-j7', date: '2025-01-25', amount: 20000, type: 'spending', category: 'Utilities', description: 'Electricity & water bill' },
+    { id: 'tx-j8', date: '2025-01-28', amount: 12000, type: 'profit', category: 'Other Income', description: 'Conference hall rental' },
+  ]},
+  { month: 'Feb', spending: { total: 750000, inventory: 220000, staffSalaries: 320000, maintenance: 60000, utilities: 95000, other: 55000 }, profit: { total: 350000, roomBookings: 240000, services: 70000, otherIncome: 40000 }, transactions: [
+    { id: 'tx-f1', date: '2025-02-02', amount: 40000, type: 'spending', category: 'Inventory', description: 'Toiletries bulk order' },
+    { id: 'tx-f2', date: '2025-02-07', amount: 32000, type: 'profit', category: 'Room Bookings', description: 'Valentine week bookings' },
+    { id: 'tx-f3', date: '2025-02-14', amount: 18000, type: 'profit', category: 'Services', description: 'Special dinner events' },
+    { id: 'tx-f4', date: '2025-02-20', amount: 60000, type: 'spending', category: 'Staff Salaries', description: 'Bi-weekly payout' },
+  ]},
+  { month: 'Mar', spending: { total: 900000, inventory: 300000, staffSalaries: 320000, maintenance: 100000, utilities: 110000, other: 70000 }, profit: { total: 500000, roomBookings: 350000, services: 100000, otherIncome: 50000 }, transactions: [
+    { id: 'tx-m1', date: '2025-03-05', amount: 55000, type: 'profit', category: 'Room Bookings', description: 'Holi season bookings' },
+    { id: 'tx-m2', date: '2025-03-10', amount: 70000, type: 'spending', category: 'Inventory', description: 'Mini bar restocking' },
+    { id: 'tx-m3', date: '2025-03-18', amount: 25000, type: 'profit', category: 'Services', description: 'Laundry & spa' },
+    { id: 'tx-m4', date: '2025-03-25', amount: 30000, type: 'spending', category: 'Maintenance', description: 'Room renovation' },
+  ]},
+  { month: 'Apr', spending: { total: 850000, inventory: 280000, staffSalaries: 320000, maintenance: 90000, utilities: 105000, other: 55000 }, profit: { total: 450000, roomBookings: 310000, services: 90000, otherIncome: 50000 }, transactions: [
+    { id: 'tx-a1', date: '2025-04-02', amount: 42000, type: 'profit', category: 'Room Bookings', description: 'Regular bookings' },
+    { id: 'tx-a2', date: '2025-04-12', amount: 35000, type: 'spending', category: 'Inventory', description: 'Cleaning supplies' },
+  ]},
+  { month: 'May', spending: { total: 950000, inventory: 320000, staffSalaries: 330000, maintenance: 110000, utilities: 120000, other: 70000 }, profit: { total: 550000, roomBookings: 380000, services: 110000, otherIncome: 60000 }, transactions: [
+    { id: 'tx-my1', date: '2025-05-05', amount: 60000, type: 'profit', category: 'Room Bookings', description: 'Summer season' },
+    { id: 'tx-my2', date: '2025-05-15', amount: 45000, type: 'spending', category: 'Staff Salaries', description: 'Monthly payout' },
+  ]},
+  { month: 'Jun', spending: { total: 1000000, inventory: 350000, staffSalaries: 330000, maintenance: 120000, utilities: 125000, other: 75000 }, profit: { total: 600000, roomBookings: 420000, services: 120000, otherIncome: 60000 }, transactions: [
+    { id: 'tx-jn1', date: '2025-06-03', amount: 70000, type: 'profit', category: 'Room Bookings', description: 'Peak season bookings' },
+    { id: 'tx-jn2', date: '2025-06-18', amount: 50000, type: 'spending', category: 'Inventory', description: 'Bulk supplies' },
+  ]},
 ];

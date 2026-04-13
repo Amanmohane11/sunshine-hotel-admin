@@ -1,8 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Room, Booking, BookingService, Guest, dummyRooms } from './dummyData';
+import { Room, Booking, BookingService, Guest, RoomCategory, dummyRooms, dummyRoomCategories } from './dummyData';
 
 interface RoomsState {
   rooms: Room[];
+  categories: RoomCategory[];
   selectedRoom: Room | null;
   bookingGuests: Guest[];
   bookingServices: BookingService[];
@@ -10,6 +11,7 @@ interface RoomsState {
 
 const initialState: RoomsState = {
   rooms: dummyRooms,
+  categories: dummyRoomCategories,
   selectedRoom: null,
   bookingGuests: [],
   bookingServices: [],
@@ -39,7 +41,13 @@ const roomsSlice = createSlice({
     removeBookingService(state, action: PayloadAction<string>) {
       state.bookingServices = state.bookingServices.filter(s => s.id !== action.payload);
     },
-    bookRoom(state, action: PayloadAction<{ roomId: string; checkIn: string; checkOut: string; paymentMethod: 'cash' | 'upi' | 'card'; amountPaid: number }>) {
+    addRoom(state, action: PayloadAction<Room>) {
+      state.rooms.push(action.payload);
+    },
+    addCategory(state, action: PayloadAction<RoomCategory>) {
+      state.categories.push(action.payload);
+    },
+    bookRoom(state, action: PayloadAction<{ roomId: string; checkIn: string; checkOut: string; paymentMethod: 'cash' | 'upi' | 'card'; amountPaid: number; gstPercent: number; pricePerPerson: number }>) {
       const room = state.rooms.find(r => r.id === action.payload.roomId);
       if (room) {
         const checkInDate = new Date(action.payload.checkIn);
@@ -47,10 +55,12 @@ const roomsSlice = createSlice({
         const now = new Date();
         const hoursBefore = (checkInDate.getTime() - now.getTime()) / 3600000;
         const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / 86400000));
-        const roomCharges = room.price * nights;
+        const guestCount = state.bookingGuests.length;
+        const roomCharges = action.payload.pricePerPerson * guestCount * nights;
         const serviceCharges = state.bookingServices.reduce((sum, s) => sum + s.price * s.quantity, 0);
         const subtotal = roomCharges + serviceCharges;
-        const tax = Math.round(subtotal * 0.18);
+        const gstPercent = action.payload.gstPercent;
+        const tax = Math.round(subtotal * (gstPercent / 100));
         const totalAmount = subtotal + tax;
 
         const booking: Booking = {
@@ -65,6 +75,7 @@ const roomsSlice = createSlice({
           roomCharges,
           serviceCharges,
           tax,
+          gstPercent,
           totalAmount,
           amountPaid: action.payload.amountPaid,
           paymentMethod: action.payload.paymentMethod,
@@ -75,7 +86,8 @@ const roomsSlice = createSlice({
         if (hoursBefore <= 1) {
           room.status = 'occupied';
         } else {
-          room.status = 'reserved';
+          // Future booking - stays available until 1 hour before
+          room.status = 'available';
         }
         state.bookingGuests = [];
         state.bookingServices = [];
@@ -87,7 +99,7 @@ const roomsSlice = createSlice({
         room.currentBooking.services.push(action.payload.service);
         room.currentBooking.serviceCharges += action.payload.service.price * action.payload.service.quantity;
         const subtotal = room.currentBooking.roomCharges + room.currentBooking.serviceCharges;
-        room.currentBooking.tax = Math.round(subtotal * 0.18);
+        room.currentBooking.tax = Math.round(subtotal * (room.currentBooking.gstPercent / 100));
         room.currentBooking.totalAmount = subtotal + room.currentBooking.tax;
         room.currentBooking.paymentStatus = room.currentBooking.amountPaid >= room.currentBooking.totalAmount ? 'paid' : room.currentBooking.amountPaid > 0 ? 'partial' : 'pending';
       }
@@ -130,9 +142,10 @@ const roomsSlice = createSlice({
         const checkIn = new Date(room.currentBooking.checkIn);
         const checkOut = new Date(action.payload.newCheckOut);
         const nights = Math.max(1, Math.ceil((checkOut.getTime() - checkIn.getTime()) / 86400000));
-        room.currentBooking.roomCharges = room.price * nights;
+        const guestCount = room.currentBooking.guests.length;
+        room.currentBooking.roomCharges = room.price * guestCount * nights;
         const subtotal = room.currentBooking.roomCharges + room.currentBooking.serviceCharges;
-        room.currentBooking.tax = Math.round(subtotal * 0.18);
+        room.currentBooking.tax = Math.round(subtotal * (room.currentBooking.gstPercent / 100));
         room.currentBooking.totalAmount = subtotal + room.currentBooking.tax;
         room.currentBooking.paymentStatus = room.currentBooking.amountPaid >= room.currentBooking.totalAmount ? 'paid' : room.currentBooking.amountPaid > 0 ? 'partial' : 'pending';
       }
@@ -140,7 +153,7 @@ const roomsSlice = createSlice({
     processScheduledBookings(state) {
       const now = new Date();
       state.rooms.forEach(room => {
-        if (room.status === 'reserved' && room.currentBooking) {
+        if (room.status === 'available' && room.currentBooking) {
           const checkIn = new Date(room.currentBooking.checkIn);
           const hoursBefore = (checkIn.getTime() - now.getTime()) / 3600000;
           if (hoursBefore <= 1) {
@@ -156,6 +169,6 @@ export const {
   selectRoom, clearSelectedRoom, addBookingGuest, removeBookingGuest,
   addBookingService, removeBookingService, bookRoom, addServiceToRoom,
   makePayment, checkoutRoom, markClean, cancelBooking, extendBooking,
-  processScheduledBookings,
+  processScheduledBookings, addRoom, addCategory,
 } = roomsSlice.actions;
 export default roomsSlice.reducer;
