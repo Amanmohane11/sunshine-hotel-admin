@@ -24,21 +24,40 @@ const ServicesPage = () => {
   const dispatch = useAppDispatch();
   const orders = useAppSelector(s => s.services.orders);
   const rooms = useAppSelector(s => s.rooms.rooms);
+  const staff = useAppSelector(s => s.staff.members);
   const occupiedRooms = rooms.filter(r => r.status === 'occupied');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ roomId: '', type: 'food' as ServiceOrder['type'], description: '', amount: '' });
+  const [form, setForm] = useState({ roomId: '', type: 'food' as ServiceOrder['type'], description: '', amount: '', assignedStaffId: '' });
   const [filter, setFilter] = useState<string>('all');
+
+  // Get current shift based on time
+  const getCurrentShift = () => {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 14) return 'morning';
+    if (hour >= 14 && hour < 22) return 'afternoon';
+    return 'night';
+  };
+
+  const currentShift = getCurrentShift();
+  const activeStaff = staff.filter(s => {
+    const isCurrentShift = s.shift === currentShift;
+    const isPresent = s.attendance.some(a => a.date === new Date().toISOString().split('T')[0]);
+    return isCurrentShift || isPresent;
+  });
 
   const handleAdd = () => {
     if (!form.roomId || !form.description) { toast.error('Fill all fields'); return; }
     const room = rooms.find(r => r.id === form.roomId);
+    const assignedStaff = staff.find(s => s.id === form.assignedStaffId);
     const order: ServiceOrder = {
       id: `s-${Date.now()}`, roomId: form.roomId, roomNumber: room?.number || '', type: form.type,
       description: form.description, amount: parseInt(form.amount) || 0, status: 'pending', createdAt: new Date().toISOString(),
+      assignedStaffId: form.assignedStaffId || undefined,
+      assignedStaffName: assignedStaff?.name || undefined,
     };
     dispatch(addServiceOrder(order));
     toast.success('Service order created');
-    setForm({ roomId: '', type: 'food', description: '', amount: '' });
+    setForm({ roomId: '', type: 'food', description: '', amount: '', assignedStaffId: '' });
     setShowForm(false);
   };
 
@@ -82,11 +101,17 @@ const ServicesPage = () => {
             <h3 className="font-semibold">Create Service Order</h3>
             <button onClick={() => setShowForm(false)} className="p-1 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div><label className="block text-xs font-semibold mb-1.5">Room</label><select value={form.roomId} onChange={e => setForm({...form, roomId: e.target.value})} className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all"><option value="">Select room</option>{occupiedRooms.map(r => <option key={r.id} value={r.id}>Room {r.number}</option>)}</select></div>
-            <div><label className="block text-xs font-semibold mb-1.5">Type</label><select value={form.type} onChange={e => setForm({...form, type: e.target.value as any})} className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all">{Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
-            <div><label className="block text-xs font-semibold mb-1.5">Description</label><input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Order details" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all" /></div>
-            <div><label className="block text-xs font-semibold mb-1.5">Amount (₹)</label><input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} placeholder="0" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus:border-primary/50 transition-all" /></div>
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <div><label className="block text-xs font-semibold mb-1.5">Room</label><select value={form.roomId} onChange={e => setForm({...form, roomId: e.target.value})} className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm"><option value="">Select room</option>{occupiedRooms.map(r => <option key={r.id} value={r.id}>Room {r.number}</option>)}</select></div>
+            <div><label className="block text-xs font-semibold mb-1.5">Type</label><select value={form.type} onChange={e => setForm({...form, type: e.target.value as any})} className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm">{Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+            <div><label className="block text-xs font-semibold mb-1.5">Description</label><input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Order details" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm" /></div>
+            <div><label className="block text-xs font-semibold mb-1.5">Amount (₹)</label><input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} placeholder="0" className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm" /></div>
+            <div><label className="block text-xs font-semibold mb-1.5">Assign Staff</label>
+              <select value={form.assignedStaffId} onChange={e => setForm({...form, assignedStaffId: e.target.value})} className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm">
+                <option value="">Select staff</option>
+                {activeStaff.map(s => <option key={s.id} value={s.id}>{s.name} ({s.shift})</option>)}
+              </select>
+            </div>
           </div>
           <button onClick={handleAdd} className="mt-4 px-5 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all btn-ripple shadow-sm shadow-primary/20">Create Order</button>
         </div>
@@ -107,6 +132,7 @@ const ServicesPage = () => {
               <th className="px-5 py-3.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Room</th>
               <th className="px-5 py-3.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Type</th>
               <th className="px-5 py-3.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Description</th>
+              <th className="px-5 py-3.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Staff</th>
               <th className="px-5 py-3.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Amount</th>
               <th className="px-5 py-3.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Status</th>
               <th className="px-5 py-3.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Actions</th>
@@ -118,6 +144,7 @@ const ServicesPage = () => {
                 <td className="px-5 py-3.5 font-semibold">Room {o.roomNumber}</td>
                 <td className="px-5 py-3.5">{typeLabels[o.type]}</td>
                 <td className="px-5 py-3.5 text-muted-foreground">{o.description}</td>
+                <td className="px-5 py-3.5 text-muted-foreground">{o.assignedStaffName || '—'}</td>
                 <td className="px-5 py-3.5 font-medium">₹{o.amount.toLocaleString()}</td>
                 <td className="px-5 py-3.5"><span className={cn('px-2.5 py-1 rounded-lg text-xs font-medium capitalize', statusBadge[o.status])}>{o.status.replace('_', ' ')}</span></td>
                 <td className="px-5 py-3.5">

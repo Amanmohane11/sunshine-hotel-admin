@@ -1,5 +1,5 @@
 import { useAppSelector } from '@/store';
-import { BedDouble, CheckCircle, XCircle, Sparkles, CalendarClock, TrendingUp, ArrowRight } from 'lucide-react';
+import { BedDouble, CheckCircle, XCircle, Sparkles, TrendingUp, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,7 +10,6 @@ const HomePage = () => {
   const available = rooms.filter(r => r.status === 'available').length;
   const occupied = rooms.filter(r => r.status === 'occupied').length;
   const cleaning = rooms.filter(r => r.status === 'cleaning').length;
-  const reserved = rooms.filter(r => r.status === 'reserved').length;
 
   const recentBookings = rooms
     .filter(r => r.currentBooking)
@@ -23,7 +22,6 @@ const HomePage = () => {
     { label: 'Available', value: available, icon: CheckCircle, gradient: 'from-emerald-500/10 to-emerald-600/5', iconColor: 'text-status-available', borderColor: 'border-status-available/20' },
     { label: 'Occupied', value: occupied, icon: XCircle, gradient: 'from-rose-500/10 to-rose-600/5', iconColor: 'text-status-occupied', borderColor: 'border-status-occupied/20' },
     { label: 'Cleaning', value: cleaning, icon: Sparkles, gradient: 'from-amber-500/10 to-amber-600/5', iconColor: 'text-status-cleaning', borderColor: 'border-status-cleaning/20' },
-    { label: 'Reserved', value: reserved, icon: CalendarClock, gradient: 'from-blue-500/10 to-blue-600/5', iconColor: 'text-status-blue', borderColor: 'border-status-blue/20' },
   ];
 
   return (
@@ -33,7 +31,7 @@ const HomePage = () => {
         <p className="text-muted-foreground text-sm">Here's what's happening at your hotel today.</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         {stats.map(({ label, value, icon: Icon, gradient, iconColor, borderColor }, idx) => (
           <div key={label} className={`glass-card hover-lift rounded-2xl p-5 border ${borderColor} animate-slide-up`} style={{ animationDelay: `${idx * 60}ms` }}>
             <div className="flex items-center justify-between mb-3">
@@ -47,19 +45,15 @@ const HomePage = () => {
         ))}
       </div>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
           { label: 'Manage Rooms', desc: 'View & book rooms', to: '/rooms', color: 'from-primary/15 to-primary/5' },
           { label: 'View Dashboard', desc: 'Analytics & KPIs', to: '/dashboard', color: 'from-status-blue/15 to-status-blue/5' },
           { label: 'Staff Management', desc: 'Shifts & tasks', to: '/staff', color: 'from-status-available/15 to-status-available/5' },
         ].map((action, idx) => (
-          <button
-            key={action.to}
-            onClick={() => navigate(action.to)}
-            className={`glass-card hover-lift rounded-2xl p-5 text-left group border border-border/50 animate-slide-up`}
-            style={{ animationDelay: `${(idx + 5) * 60}ms` }}
-          >
+          <button key={action.to} onClick={() => navigate(action.to)}
+            className="glass-card hover-lift rounded-2xl p-5 text-left group border border-border/50 animate-slide-up"
+            style={{ animationDelay: `${(idx + 4) * 60}ms` }}>
             <div className={`w-full h-1.5 rounded-full bg-gradient-to-r ${action.color} mb-4`} />
             <p className="font-semibold text-sm mb-1">{action.label}</p>
             <div className="flex items-center justify-between">
@@ -74,7 +68,7 @@ const HomePage = () => {
         <div className="p-5 border-b border-border/50 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Recent Bookings</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Latest guest check-ins & reservations</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Latest guest check-ins</p>
           </div>
           <button onClick={() => navigate('/booking-history')} className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
             View All <ArrowRight className="w-3 h-3" />
@@ -99,9 +93,7 @@ const HomePage = () => {
                   <td className="px-5 py-3.5 text-muted-foreground">{format(new Date(b.checkIn), 'dd MMM, h:mm a')}</td>
                   <td className="px-5 py-3.5 text-muted-foreground">{format(new Date(b.checkOut), 'dd MMM, h:mm a')}</td>
                   <td className="px-5 py-3.5">
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-status-available/10 text-status-available">
-                      {b.status}
-                    </span>
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-status-available/10 text-status-available">{b.status}</span>
                   </td>
                 </tr>
               ))}

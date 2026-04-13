@@ -1,6 +1,6 @@
 import { useAppSelector } from '@/store';
 import { Building2, TrendingUp, CheckCircle, Clock } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { superAdminMonthlyEarnings } from '@/store/dummyData';
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
@@ -8,14 +8,14 @@ const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3
 const SADashboardPage = () => {
   const { hotels } = useAppSelector(s => s.hotels);
   const activeHotels = hotels.filter(h => h.status === 'active');
-  const pendingHotels = hotels.filter(h => h.status === 'pending');
+  const trialHotels = hotels.filter(h => h.status === 'trial');
   const inactiveHotels = hotels.filter(h => h.status === 'inactive');
   const totalRevenue = hotels.reduce((s, h) => s + h.revenue, 0);
 
   const statusData = [
     { name: 'Active', value: activeHotels.length },
     { name: 'Inactive', value: inactiveHotels.length },
-    { name: 'Pending', value: pendingHotels.length },
+    { name: 'Trial', value: trialHotels.length },
   ];
 
   return (
@@ -30,7 +30,7 @@ const SADashboardPage = () => {
           {[
             { label: 'Total Hotels', value: hotels.length, icon: Building2, color: 'text-status-blue', gradient: 'from-blue-500/10 to-blue-600/5' },
             { label: 'Active', value: activeHotels.length, icon: CheckCircle, color: 'text-status-available', gradient: 'from-emerald-500/10 to-emerald-600/5' },
-            { label: 'Pending', value: pendingHotels.length, icon: Clock, color: 'text-status-cleaning', gradient: 'from-amber-500/10 to-amber-600/5' },
+            { label: 'Trial', value: trialHotels.length, icon: Clock, color: 'text-status-cleaning', gradient: 'from-amber-500/10 to-amber-600/5' },
             { label: 'Revenue', value: `₹${(totalRevenue / 100000).toFixed(1)}L`, icon: TrendingUp, color: 'text-primary', gradient: 'from-amber-500/10 to-amber-600/5' },
           ].map(({ label, value, icon: Icon, color, gradient }, idx) => (
             <div key={label} className="glass-card hover-lift rounded-2xl border border-border/50 p-5 animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
@@ -62,13 +62,13 @@ const SADashboardPage = () => {
           <div className="glass-card rounded-2xl border border-border/50 p-5">
             <h3 className="font-semibold mb-4">Monthly Registrations</h3>
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={superAdminMonthlyEarnings}>
+              <BarChart data={superAdminMonthlyEarnings}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
                 <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
                 <Tooltip />
-                <Line type="monotone" dataKey="hotels" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ fill: 'hsl(var(--chart-2))' }} />
-              </LineChart>
+                <Bar dataKey="hotels" fill="hsl(var(--chart-2))" radius={[6, 6, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
