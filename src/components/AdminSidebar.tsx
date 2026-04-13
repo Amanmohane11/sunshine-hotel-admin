@@ -39,6 +39,10 @@ const superAdminLinks = [
 
 const AdminSidebar = () => {
   const userRole = useAppSelector(s => s.auth.user?.role);
+  const hotelId = useAppSelector(s => s.auth.user?.hotelId);
+  const hotels = useAppSelector(s => s.hotels.hotels);
+  const hotel = hotels.find(h => h.id === (hotelId || 'hotel-1'));
+  const featureAccess = hotel?.featureAccess || [];
   const location = useLocation();
   const [inventoryOpen, setInventoryOpen] = useState(location.pathname.startsWith('/inventory'));
 
@@ -81,11 +85,11 @@ const AdminSidebar = () => {
   return (
     <aside className="w-64 min-h-[calc(100vh-4rem)] gradient-dark border-r border-sidebar-border flex flex-col py-5 shrink-0">
       <nav className="flex flex-col gap-0.5 px-3">
-        {hotelMainLinks.map(renderLink)}
+        {hotelMainLinks.filter(l => featureAccess.length === 0 || featureAccess.includes(l.feature)).map(renderLink)}
       </nav>
 
-      {/* Inventory Dropdown */}
-      <div className="px-3 mt-1">
+      {/* Inventory Dropdown - only if inventory feature is enabled */}
+      {(featureAccess.length === 0 || featureAccess.includes('inventory')) && <div className="px-3 mt-1">
         <button
           onClick={() => setInventoryOpen(!inventoryOpen)}
           className={cn(
@@ -118,7 +122,7 @@ const AdminSidebar = () => {
                 {label}
               </NavLink>
             ))}
-          </div>
+      </div>}
         </div>
       </div>
 
@@ -126,7 +130,7 @@ const AdminSidebar = () => {
         <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/30">More</span>
       </div>
       <nav className="flex flex-col gap-0.5 px-3">
-        {hotelMoreLinks.map(renderLink)}
+        {hotelMoreLinks.filter(l => featureAccess.length === 0 || featureAccess.includes(l.feature)).map(renderLink)}
       </nav>
     </aside>
   );
