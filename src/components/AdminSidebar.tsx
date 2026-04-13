@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, BedDouble, ConciergeBell, Users, Wallet, Package, History, UserCircle, Building2, ChevronDown, ChevronRight, FileText, BarChart3, Receipt, MessageSquare, CreditCard } from 'lucide-react';
+import { Home, LayoutDashboard, BedDouble, ConciergeBell, Users, Wallet, Package, History, UserCircle, Building2, ChevronDown, ChevronRight, FileText, BarChart3, Receipt, MessageSquare, CreditCard, HelpCircle, Settings } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAppSelector } from '@/store';
@@ -25,6 +25,8 @@ const hotelMoreLinks = [
   { to: '/customers', icon: UserCircle, label: 'Customers', feature: 'customers' as const },
   { to: '/billing', icon: FileText, label: 'Billing', feature: 'history' as const },
   { to: '/reports', icon: BarChart3, label: 'Reports', feature: 'reports' as const },
+  { to: '/help', icon: HelpCircle, label: 'Help & Support', feature: 'home' as const },
+  { to: '/settings', icon: Settings, label: 'Settings', feature: 'home' as const },
 ];
 
 /* ── Super Admin links ── */

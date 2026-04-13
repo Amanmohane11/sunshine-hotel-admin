@@ -25,6 +25,8 @@ import SASubscriptionsPage from "./pages/super-admin/SASubscriptionsPage";
 import BillingPage from "./pages/BillingPage";
 import ReportsPage from "./pages/ReportsPage";
 import HelpPage from "./pages/HelpPage";
+import SettingsPage from "./pages/SettingsPage";
+import SubscriptionPage from "./pages/SubscriptionPage";
 import NotFound from "./pages/NotFound";
 import { useAppSelector } from "./store";
 
@@ -69,7 +71,9 @@ const App = () => (
                   <Route path="/billing" element={<HotelOnly><BillingPage /></HotelOnly>} />
                   <Route path="/reports" element={<HotelOnly><PasswordGate pageName="Reports"><ReportsPage /></PasswordGate></HotelOnly>} />
                   <Route path="/guest-crm" element={<HotelOnly><GuestCRMPage /></HotelOnly>} />
-                  <Route path="/help" element={<HelpPage />} />
+                  <Route path="/help" element={<HotelOnly><HelpPage /></HotelOnly>} />
+                  <Route path="/settings" element={<HotelOnly><SettingsPage /></HotelOnly>} />
+                  <Route path="/subscription" element={<HotelOnly><SubscriptionPage /></HotelOnly>} />
 
                   {/* Super Admin routes */}
                   <Route path="/super-admin" element={<SuperOnly><SADashboardPage /></SuperOnly>} />
